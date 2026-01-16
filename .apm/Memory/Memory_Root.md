@@ -21,3 +21,13 @@
     *   [.apm/Memory/Phase_02_Database_Schema_Auth/Task_2_3_JWT_Auth.md](.apm/Memory/Phase_02_Database_Schema_Auth/Task_2_3_JWT_Auth.md)
     *   [.apm/Memory/Phase_02_Database_Schema_Auth/Task_2_4_Auth_API.md](.apm/Memory/Phase_02_Database_Schema_Auth/Task_2_4_Auth_API.md)
     *   [.apm/Memory/Phase_02_Database_Schema_Auth/Task_2_5_Auth_UI.md](.apm/Memory/Phase_02_Database_Schema_Auth/Task_2_5_Auth_UI.md)
+
+## Phase 03 – Core Business Logic & Data Mocks Summary
+*   **Outcome:** Developed the core intelligence engine and plan enforcement logic. Implemented an AI-scoring simulator, multi-tier quota management, and a comprehensive data seeder for development. Delivered high-value API endpoints for competitor management, market radar, and dashboard analytics.
+*   **Involved Agents:** Agent_Data_IA, Agent_Backend_Core, Agent_Backend_Business.
+*   **Logs:**
+    *   [.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_1_Data_Seeder.md](.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_1_Data_Seeder.md)
+    *   [.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_2_Quota_Management.md](.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_2_Quota_Management.md)
+    *   [.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_3_IA_Scoring.md](.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_3_IA_Scoring.md)
+    *   [.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_4_Competitor_Radar_API.md](.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_4_Competitor_Radar_API.md)
+    *   [.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_5_Dashboard_Stats_API.md](.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_5_Dashboard_Stats_API.md)

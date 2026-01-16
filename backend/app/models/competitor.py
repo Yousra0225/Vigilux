@@ -24,3 +24,25 @@ class Competitor(SQLModel, table=True):
 
     project: "Project" = Relationship(back_populates="competitors")
     events: List["Event"] = Relationship(back_populates="competitor")
+
+
+class CompetitorCreate(SQLModel):
+    project_id: uuid.UUID
+    name: str = Field(max_length=255)
+    url: Optional[str] = Field(default=None, max_length=2048)
+
+
+class CompetitorRead(SQLModel):
+    id: uuid.UUID
+    project_id: uuid.UUID
+    name: str
+    url: Optional[str]
+    score: int
+    tracking_status: TrackingStatus
+    created_at: datetime
+
+
+class CompetitorUpdate(SQLModel):
+    name: Optional[str] = Field(default=None, max_length=255)
+    url: Optional[str] = Field(default=None, max_length=2048)
+    tracking_status: Optional[TrackingStatus] = None

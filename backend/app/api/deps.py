@@ -1,4 +1,5 @@
 from typing import Annotated, Dict, Any, Generator
+import uuid
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -34,15 +35,17 @@ def get_current_user(
             detail="Could not validate credentials",
         )
     
-    user = session.get(User, token_data.sub)
+    try:
+        user_id = uuid.UUID(token_data.sub)
+        user = session.get(User, user_id)
+    except (ValueError, TypeError):
+         raise HTTPException(status_code=401, detail="Invalid token subject")
+
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    if not user.is_active: # Assuming is_active might be added later, or we check verify. 
-        # User model doesn't have is_active in the provided file, it has is_verified.
-        # Standard security usually checks is_active. 
-        # Since is_active is NOT in User model I read earlier, I will skip this check or check is_verified if required.
-        # Instructions say: "Create user with ... is_verified=True".
-        # So I will assume we don't have is_active yet.
-        pass
         
     return user
+    
+        
+    
+    
