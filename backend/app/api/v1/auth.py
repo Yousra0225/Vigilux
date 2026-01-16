@@ -9,6 +9,7 @@ from app.core import security
 from app.core.db import get_session
 from app.models.auth import Token
 from app.models.user import User, UserCreate, UserRead, PlanType
+from app.api.deps import get_current_user
 
 router = APIRouter()
 
