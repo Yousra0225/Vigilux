@@ -1,3 +1,3 @@
-# <Project Name> – APM Memory Root
+# Vigilux – APM Memory Root
 **Memory Strategy:** Dynamic-MD
-**Project Overview:** [To be filled by Manager Agent before first phase execution]
+**Project Overview:** Vigilux is a proactive AI-driven competitive intelligence SaaS. It transforms passive monitoring into actionable "Breakthrough Signals" (Features, Prices, Financial Health, New Entrants). The platform features a global radar for market discovery and surgical tracking for selected competitors, with tiered access (Starter, Growth, Ultimate), a modern Next.js/FastAPI stack, and full Dockerization.
