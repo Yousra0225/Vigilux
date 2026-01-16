@@ -6,6 +6,7 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 import { CompetitorList, Competitor } from '@/components/competitors/CompetitorList';
 import { EventTimeline, Event } from '@/components/competitors/EventTimeline';
+import { QuickViewModal, CompetitorDetail } from '@/components/competitors/QuickViewModal';
 
 interface Project {
     id: string;
@@ -22,6 +23,12 @@ export default function CompetitorsPage() {
   const [selectedCompetitorId, setSelectedCompetitorId] = useState<string | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalCompetitor, setModalCompetitor] = useState<CompetitorDetail | null>(null);
+  const [loadingModal, setLoadingModal] = useState(false);
+
+  // ... (rest of the file)
 
   // 1. Fetch Projects on mount
   useEffect(() => {
@@ -85,6 +92,22 @@ export default function CompetitorsPage() {
     fetchEvents();
   }, [selectedCompetitorId]);
 
+  const handleOpenModal = async (id: string) => {
+    setSelectedCompetitorId(id);
+    setIsModalOpen(true);
+    setLoadingModal(true);
+    try {
+      const res = await api.get<CompetitorDetail>(`/api/v1/competitors/${id}`);
+      setModalCompetitor(res.data);
+    } catch (error) {
+      console.error('Failed to fetch competitor details', error);
+      toast.error('Could not load competitor details');
+      setIsModalOpen(false);
+    } finally {
+      setLoadingModal(false);
+    }
+  };
+
   return (
     <div className="h-[calc(100vh-6rem)] flex flex-col">
       <div className="flex justify-between items-center mb-6">
@@ -108,7 +131,7 @@ export default function CompetitorsPage() {
                 <CompetitorList 
                     competitors={competitors} 
                     selectedId={selectedCompetitorId}
-                    onSelect={setSelectedCompetitorId}
+                    onSelect={handleOpenModal}
                     loading={loadingCompetitors}
                 />
             </div>
@@ -135,6 +158,13 @@ export default function CompetitorsPage() {
             </div>
         </div>
       </div>
+
+      <QuickViewModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        competitor={modalCompetitor}
+        loading={loadingModal}
+      />
     </div>
   );
 }

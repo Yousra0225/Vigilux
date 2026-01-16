@@ -11,6 +11,7 @@ from app.api.v1 import competitors
 from app.api.v1 import projects
 from app.api.v1 import radar
 from app.api.v1 import dashboard
+from app.api.v1 import notifications
 from app.core.config import settings
 
 
@@ -49,6 +50,7 @@ app.include_router(competitors.router, prefix=f"{settings.API_V1_PREFIX}/competi
 app.include_router(projects.router, prefix=f"{settings.API_V1_PREFIX}/projects", tags=["Projects"])
 app.include_router(radar.router, prefix=f"{settings.API_V1_PREFIX}/radar", tags=["Radar"])
 app.include_router(dashboard.router, prefix=f"{settings.API_V1_PREFIX}/dashboard", tags=["Dashboard"])
+app.include_router(notifications.router, prefix=f"{settings.API_V1_PREFIX}/users", tags=["Notifications"])
 
 
 @app.get("/")

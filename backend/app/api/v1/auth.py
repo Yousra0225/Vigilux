@@ -61,3 +61,13 @@ def login_access_token(
         subject=user.id, expires_delta=access_token_expires
     )
     return Token(access_token=access_token, token_type="bearer")
+
+
+@router.get("/me", response_model=UserRead)
+def read_user_me(
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> User:
+    """
+    Get current user.
+    """
+    return current_user

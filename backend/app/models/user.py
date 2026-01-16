@@ -6,6 +6,7 @@ from enum import Enum
 
 if TYPE_CHECKING:
     from .project import Project
+    from .notification import NotificationSettings
 
 class PlanType(str, Enum):
     STARTER = "starter"
@@ -25,6 +26,7 @@ class User(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     projects: List["Project"] = Relationship(back_populates="user")
+    notification_settings: List["NotificationSettings"] = Relationship(back_populates="user")
 
 
 class UserCreate(SQLModel):

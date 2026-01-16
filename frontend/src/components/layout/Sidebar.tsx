@@ -15,9 +15,9 @@ import { cn } from "@/lib/utils";
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Competitors", href: "/competitors", icon: Users },
-  { name: "Radar", href: "/radar", icon: Radio },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Competitors", href: "/dashboard/competitors", icon: Users },
+  { name: "Radar", href: "/dashboard/radar", icon: Radio },
+  { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
 export function Sidebar() {

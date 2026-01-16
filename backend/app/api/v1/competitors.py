@@ -6,13 +6,40 @@ from sqlmodel import Session, select
 
 from app.api.deps import get_current_user
 from app.core.db import get_session
-from app.models.competitor import Competitor, CompetitorCreate, CompetitorRead, CompetitorUpdate
+from app.models.competitor import Competitor, CompetitorCreate, CompetitorRead, CompetitorUpdate, CompetitorDetail
 from app.models.event import Event
 from app.models.user import User
 from app.models.project import Project
 from app.services.quota import check_competitor_quota
+from app.services.scoring import generate_competitor_insights
 
 router = APIRouter()
+
+@router.get("/{competitor_id}", response_model=CompetitorDetail)
+def read_competitor(
+    competitor_id: uuid.UUID,
+    session: Annotated[Session, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> Any:
+    """
+    Retrieve a specific competitor with AI insights.
+    """
+    competitor = session.get(Competitor, competitor_id)
+    if not competitor:
+        raise HTTPException(status_code=404, detail="Competitor not found")
+
+    # Verify ownership through project
+    project = session.get(Project, competitor.project_id)
+    if not project or project.user_id != current_user.id:
+         raise HTTPException(status_code=403, detail="Not authorized")
+
+    insights = generate_competitor_insights(competitor.name)
+    
+    return {
+        **competitor.model_dump(),
+        **insights
+    }
+
 
 @router.get("/{competitor_id}/events", response_model=List[Event])
 def read_competitor_events(
