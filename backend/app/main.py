@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.health import router as health_router
 from app.api.v1 import auth as auth_router
 from app.api.v1 import competitors
+from app.api.v1 import projects
 from app.api.v1 import radar
 from app.api.v1 import dashboard
 from app.core.config import settings
@@ -45,6 +46,7 @@ app.add_middleware(
 app.include_router(health_router, tags=["Health"])
 app.include_router(auth_router.router, prefix=f"{settings.API_V1_PREFIX}/auth", tags=["Auth"])
 app.include_router(competitors.router, prefix=f"{settings.API_V1_PREFIX}/competitors", tags=["Competitors"])
+app.include_router(projects.router, prefix=f"{settings.API_V1_PREFIX}/projects", tags=["Projects"])
 app.include_router(radar.router, prefix=f"{settings.API_V1_PREFIX}/radar", tags=["Radar"])
 app.include_router(dashboard.router, prefix=f"{settings.API_V1_PREFIX}/dashboard", tags=["Dashboard"])
 

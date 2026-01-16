@@ -46,3 +46,11 @@ class CompetitorUpdate(SQLModel):
     name: Optional[str] = Field(default=None, max_length=255)
     url: Optional[str] = Field(default=None, max_length=2048)
     tracking_status: Optional[TrackingStatus] = None
+
+
+class CompetitorDetail(CompetitorRead):
+    pitch: str
+    estimated_revenue: str
+    strengths: List[str]
+    weaknesses: List[str]
+    market_sentiment: str

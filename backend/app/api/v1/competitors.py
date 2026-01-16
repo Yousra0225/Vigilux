@@ -7,11 +7,38 @@ from sqlmodel import Session, select
 from app.api.deps import get_current_user
 from app.core.db import get_session
 from app.models.competitor import Competitor, CompetitorCreate, CompetitorRead, CompetitorUpdate
+from app.models.event import Event
 from app.models.user import User
 from app.models.project import Project
 from app.services.quota import check_competitor_quota
 
 router = APIRouter()
+
+@router.get("/{competitor_id}/events", response_model=List[Event])
+def read_competitor_events(
+    competitor_id: uuid.UUID,
+    session: Annotated[Session, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> List[Event]:
+    """
+    Retrieve events for a specific competitor.
+    """
+    competitor = session.get(Competitor, competitor_id)
+    if not competitor:
+        raise HTTPException(status_code=404, detail="Competitor not found")
+
+    # Verify ownership through project
+    project = session.get(Project, competitor.project_id)
+    if not project or project.user_id != current_user.id:
+         raise HTTPException(status_code=403, detail="Not authorized")
+
+    events = session.exec(
+        select(Event)
+        .where(Event.competitor_id == competitor_id)
+        .order_by(Event.timestamp.desc())
+    ).all()
+    return events
+
 
 @router.get("/", response_model=List[CompetitorRead])
 def read_competitors(
