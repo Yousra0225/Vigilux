@@ -1,0 +1,54 @@
+"""Vigilux Backend - Main Application Entry Point."""
+
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.api.health import router as health_router
+from app.core.config import settings
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan manager.
+
+    Handles startup and shutdown events.
+    """
+    # Startup
+    print(f"Starting {settings.PROJECT_NAME} v{settings.VERSION}...")
+    yield
+    # Shutdown
+    print(f"Shutting down {settings.PROJECT_NAME}...")
+
+
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    version=settings.VERSION,
+    lifespan=lifespan,
+)
+
+# CORS Middleware Configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include routers
+app.include_router(health_router, tags=["Health"])
+
+
+@app.get("/")
+async def root() -> dict[str, str]:
+    """Root endpoint.
+
+    Returns:
+        A welcome message with API information.
+    """
+    return {
+        "message": f"Welcome to {settings.PROJECT_NAME} API",
+        "version": settings.VERSION,
+    }
