@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8000
     DEBUG: bool = False
+    
+    # Database
+    DATABASE_URL: str = "postgresql://vigilux_user:vigilux_password@localhost:5432/vigilux"
 
     # CORS
     CORS_ORIGINS: List[str] = [
