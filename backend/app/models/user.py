@@ -19,6 +19,7 @@ class User(SQLModel, table=True):
     hashed_password: str
     plan_type: PlanType = Field(default=PlanType.GROWTH)
     trial_start_date: Optional[datetime] = Field(default=None)
+    is_paid: bool = Field(default=False)
     is_verified: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
