@@ -48,13 +48,15 @@ services:
     container_name: vigilux-web
     restart: unless-stopped
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_API_URL: http://host.docker.internal:8000
     ports:
       - "3000:3000"
     depends_on:
       - api
     networks:
       - vigilux-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 # Named volumes for data persistence
 volumes:
