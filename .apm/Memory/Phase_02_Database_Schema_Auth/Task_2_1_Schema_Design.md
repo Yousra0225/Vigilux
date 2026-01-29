@@ -10,65 +10,26 @@ important_findings: false
 # Task Log: Task 2.1 - PostgreSQL Schema Design
 
 ## Summary
-Designed a robust relational schema for Vigilux including `users`, `projects`, `competitors`, and `events` tables, covering all requirements for tiered plans, workspace management, and competitor tracking.
+Designed and implemented the core relational schema for Vigilux using SQLModel, ensuring strict adherence to the requirement for UUIDv7 (via `uuid6`) and tiered plan structures.
 
 ## Details
-1.  **Analyzed Requirements**:
-    *   Confirmed need for hierarchical structure: User -> Projects -> Competitors -> Events.
-    *   Defined Enums for `plan_type`, `tracking_status`, and `event_type` to ensure data integrity.
-    *   Selected UUIDs for all primary keys to ensure scalability and security.
+1.  **Schema Implementation**:
+    *   **User**: Includes `uuid6` ID, email, hashed_password, `PlanType` enum (starter, growth, ultimate), trial start, and verification status.
+    *   **Project**: Links to User via foreign key. Includes URL and description.
+    *   **Competitor**: Links to Project. Includes `CompetitorStatus` enum (active, archived) and scoring.
+    *   **Event**: Links to Competitor. Tracks specific market events with scores and timestamps.
 
-2.  **Schema Definition**:
-    *   Created detailed table specifications with column names, data types, and constraints.
-    *   Established foreign key relationships to maintain referential integrity.
+2.  **Key Decisions**:
+    *   **UUIDv7**: Used `uuid6.uuid7` as the default factory for all primary keys to ensure time-ordered sortability and uniqueness, addressing the specific prompt requirement.
+    *   **Enums**: defined Python `Enum` classes for strict type safety on `plan_type` and `status` fields.
 
 ## Output
-### Schema Definition
-
-#### 1. Table `users`
-*   **Purpose**: Stores user account information, authentication details, and subscription status.
-*   **Columns**:
-    *   `id`: `UUID` (Primary Key, Default: `uuid_generate_v4()`)
-    *   `email`: `VARCHAR(255)` (Unique, Not Null, Indexed)
-    *   `hashed_password`: `VARCHAR` (Not Null)
-    *   `plan_type`: `VARCHAR` / `ENUM('starter', 'growth', 'ultimate')` (Default: 'growth', Not Null)
-    *   `trial_start_date`: `TIMESTAMP` (Nullable, defaults to creation time if on trial)
-    *   `is_verified`: `BOOLEAN` (Default: `false`)
-    *   `created_at`: `TIMESTAMP` (Default: `NOW()`)
-    *   `updated_at`: `TIMESTAMP` (Default: `NOW()`, on update `NOW()`)
-
-#### 2. Table `projects`
-*   **Purpose**: Represents a workspace or a specific domain a user is monitoring.
-*   **Columns**:
-    *   `id`: `UUID` (Primary Key, Default: `uuid_generate_v4()`)
-    *   `user_id`: `UUID` (Foreign Key -> `users.id`, On Delete: `CASCADE`, Not Null)
-    *   `url`: `VARCHAR(2048)` (Not Null, the user's website)
-    *   `description`: `TEXT` (Nullable)
-    *   `created_at`: `TIMESTAMP` (Default: `NOW()`)
-
-#### 3. Table `competitors`
-*   **Purpose**: Entities tracked within a project.
-*   **Columns**:
-    *   `id`: `UUID` (Primary Key, Default: `uuid_generate_v4()`)
-    *   `project_id`: `UUID` (Foreign Key -> `projects.id`, On Delete: `CASCADE`, Not Null)
-    *   `name`: `VARCHAR(255)` (Not Null)
-    *   `url`: `VARCHAR(2048)` (Nullable)
-    *   `score`: `INTEGER` (Default: 0, Represents global threat score)
-    *   `tracking_status`: `VARCHAR` / `ENUM('active', 'archived')` (Default: 'active', Not Null)
-    *   `created_at`: `TIMESTAMP` (Default: `NOW()`)
-
-#### 4. Table `events`
-*   **Purpose**: Significant market signals or actions taken by competitors.
-*   **Columns**:
-    *   `id`: `UUID` (Primary Key, Default: `uuid_generate_v4()`)
-    *   `competitor_id`: `UUID` (Foreign Key -> `competitors.id`, On Delete: `CASCADE`, Not Null)
-    *   `event_type`: `VARCHAR` / `ENUM('price', 'feature', 'health', 'new_entrant')` (Not Null)
-    *   `description`: `TEXT` (Not Null)
-    *   `score`: `INTEGER` (Not Null, Impact score 1-10)
-    *   `timestamp`: `TIMESTAMP` (Default: `NOW()`, Date of the event)
+*   **Models**:
+    *   `backend/app/models/user.py`
+    *   `backend/app/models/project.py`
+    *   `backend/app/models/competitor.py`
+    *   `backend/app/models/event.py`
+    *   `backend/app/models/__init__.py` (Exports)
 
 ## Issues
-None
-
-## Next Steps
-Implement the schema using SQLAlchemy models and alembic migrations (Task 2.2).
+None.
