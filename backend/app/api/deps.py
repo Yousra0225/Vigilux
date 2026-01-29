@@ -9,11 +9,11 @@ from sqlmodel import Session
 
 from app.core.config import settings
 from app.core.db import get_session
-from app.models.auth import TokenPayload
+from app.schemas.token import TokenPayload
 from app.models.user import User
 
 reusable_oauth2 = OAuth2PasswordBearer(
-    tokenUrl=f"{settings.API_V1_PREFIX}/auth/login"
+    tokenUrl=f"{settings.API_V1_STR}/auth/login"
 )
 
 
