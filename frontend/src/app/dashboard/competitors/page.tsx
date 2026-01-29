@@ -6,7 +6,6 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 import { CompetitorList, Competitor } from '@/components/competitors/CompetitorList';
 import { EventTimeline, Event } from '@/components/competitors/EventTimeline';
-import { QuickViewModal, CompetitorDetail } from '@/components/competitors/QuickViewModal';
 
 interface Project {
     id: string;
@@ -23,12 +22,6 @@ export default function CompetitorsPage() {
   const [selectedCompetitorId, setSelectedCompetitorId] = useState<string | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalCompetitor, setModalCompetitor] = useState<CompetitorDetail | null>(null);
-  const [loadingModal, setLoadingModal] = useState(false);
-
-  // ... (rest of the file)
 
   // 1. Fetch Projects on mount
   useEffect(() => {
@@ -92,22 +85,6 @@ export default function CompetitorsPage() {
     fetchEvents();
   }, [selectedCompetitorId]);
 
-  const handleOpenModal = async (id: string) => {
-    setSelectedCompetitorId(id);
-    setIsModalOpen(true);
-    setLoadingModal(true);
-    try {
-      const res = await api.get<CompetitorDetail>(`/api/v1/competitors/${id}`);
-      setModalCompetitor(res.data);
-    } catch (error) {
-      console.error('Failed to fetch competitor details', error);
-      toast.error('Could not load competitor details');
-      setIsModalOpen(false);
-    } finally {
-      setLoadingModal(false);
-    }
-  };
-
   return (
     <div className="h-[calc(100vh-6rem)] flex flex-col">
       <div className="flex justify-between items-center mb-6">
@@ -115,7 +92,8 @@ export default function CompetitorsPage() {
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Competitors</h1>
             <p className="text-gray-500 dark:text-gray-400">Track and analyze your market competition</p>
          </div>
-         <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+         {/* Placeholder for Add Competitor */}
+         <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors opacity-50 cursor-not-allowed">
             <Plus className="w-4 h-4" />
             Add Competitor
          </button>
@@ -124,14 +102,23 @@ export default function CompetitorsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full min-h-0">
         {/* List Section */}
         <div className="lg:col-span-5 flex flex-col bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-100 dark:border-gray-700 overflow-hidden">
-            <div className="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+            <div className="p-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 flex justify-between items-center">
                <h2 className="font-semibold text-gray-700 dark:text-gray-200">Tracked Entities</h2>
+               {projects.length > 1 && (
+                 <select 
+                    value={selectedProjectId || ''} 
+                    onChange={(e) => setSelectedProjectId(e.target.value)}
+                    className="text-sm border rounded px-2 py-1 bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600"
+                 >
+                    {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                 </select>
+               )}
             </div>
             <div className="flex-1 overflow-y-auto p-4">
                 <CompetitorList 
                     competitors={competitors} 
                     selectedId={selectedCompetitorId}
-                    onSelect={handleOpenModal}
+                    onSelect={setSelectedCompetitorId}
                     loading={loadingCompetitors}
                 />
             </div>
@@ -143,7 +130,7 @@ export default function CompetitorsPage() {
                <h2 className="font-semibold text-gray-700 dark:text-gray-200">Activity Timeline</h2>
                {selectedCompetitorId && (
                    <span className="text-xs text-gray-500">
-                       Showing {events.length} events
+                       {events.length} events
                    </span>
                )}
             </div>
@@ -158,13 +145,6 @@ export default function CompetitorsPage() {
             </div>
         </div>
       </div>
-
-      <QuickViewModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        competitor={modalCompetitor}
-        loading={loadingModal}
-      />
     </div>
   );
 }

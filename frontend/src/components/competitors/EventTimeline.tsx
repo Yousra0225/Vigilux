@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 export interface Event {
   id: string;
   competitor_id: string;
-  event_type: 'price' | 'feature' | 'health' | 'new_entrant';
+  type: string; // Backend sends uppercase enum like 'PRICE'
   description: string;
   score: number;
   timestamp: string;
@@ -19,7 +19,7 @@ interface EventTimelineProps {
 }
 
 const getEventIcon = (type: string) => {
-  switch (type) {
+  switch (type.toLowerCase()) {
     case 'price': return DollarSign;
     case 'feature': return Zap;
     case 'health': return Activity;
@@ -29,8 +29,8 @@ const getEventIcon = (type: string) => {
 };
 
 const getEventColor = (type: string, score: number) => {
-    if (score > 7) return "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30";
-    switch (type) {
+    if (score > 70) return "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30";
+    switch (type.toLowerCase()) {
         case 'price': return "text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30";
         case 'feature': return "text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30";
         case 'health': return "text-purple-600 bg-purple-100 dark:text-purple-400 dark:bg-purple-900/30";
@@ -62,8 +62,8 @@ export function EventTimeline({ events, loading }: EventTimelineProps) {
   return (
     <div className="relative border-l-2 border-gray-200 dark:border-gray-700 ml-3 space-y-8 pb-4">
       {events.map((event) => {
-        const Icon = getEventIcon(event.event_type);
-        const isBreakthrough = event.score > 7;
+        const Icon = getEventIcon(event.type);
+        const isBreakthrough = event.score > 70;
 
         return (
           <div key={event.id} className="relative pl-8">
@@ -82,8 +82,8 @@ export function EventTimeline({ events, loading }: EventTimelineProps) {
             )}>
                 <div className="flex justify-between items-start mb-1">
                     <div className="flex items-center gap-2">
-                        <span className={cn("p-1 rounded text-xs font-semibold uppercase", getEventColor(event.event_type, event.score))}>
-                            {event.event_type}
+                        <span className={cn("p-1 rounded text-xs font-semibold uppercase", getEventColor(event.type, event.score))}>
+                            {event.type}
                         </span>
                         <span className="text-xs text-gray-500 dark:text-gray-400">
                              {new Date(event.timestamp).toLocaleDateString()}

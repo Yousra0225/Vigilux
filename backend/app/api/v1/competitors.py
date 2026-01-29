@@ -12,7 +12,7 @@ from app.models.project import Project
 from app.schemas.competitor import CompetitorCreate, CompetitorRead, CompetitorUpdate, RadarResult
 from app.services.quota import QuotaService
 from app.services.scoring import ScoringService
-from app.models.event import EventType
+from app.models.event import EventType, Event
 
 router = APIRouter()
 
@@ -175,3 +175,31 @@ def delete_competitor(
     session.delete(competitor)
     session.commit()
     return {"ok": True}
+
+@router.get("/{competitor_id}/events", response_model=List[Event])
+def read_competitor_events(
+    *,
+    session: Annotated[Session, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    competitor_id: uuid.UUID,
+    limit: int = 50,
+) -> Any:
+    """
+    Get events for a competitor.
+    """
+    competitor = session.get(Competitor, competitor_id)
+    if not competitor:
+        raise HTTPException(status_code=404, detail="Competitor not found")
+        
+    project = session.get(Project, competitor.project_id)
+    if not project or project.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Competitor not found")
+        
+    events = session.exec(
+        select(Event)
+        .where(Event.competitor_id == competitor_id)
+        .order_by(Event.timestamp.desc())
+        .limit(limit)
+    ).all()
+    
+    return events
