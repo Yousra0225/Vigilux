@@ -1,22 +1,9 @@
-# Vigilux Backend - Python Requirements
-
-# Core framework
-fastapi==0.115.0
-uvicorn[standard]==0.32.0
-
-# Utilities
-python-dotenv==1.0.1
-pydantic==2.10.3
-pydantic-settings==2.6.0
-
-# Database
-sqlalchemy==2.0.36
-alembic==1.14.0
-psycopg2-binary==2.9.10
-sqlmodel==0.0.22
-
-# Security (for future use)
-bcrypt==3.2.2
-passlib[bcrypt]==1.7.4
-python-jose[cryptography]==3.3.0
-python-multipart==0.0.20
+# Vigilux Backend Dependencies
+fastapi
+uvicorn
+sqlmodel
+alembic
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+pytest
