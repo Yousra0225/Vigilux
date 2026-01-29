@@ -1,69 +1,68 @@
-# Docker Compose configuration for Vigilux
 version: '3.8'
 
 services:
-  # PostgreSQL Database
   db:
     image: postgres:15-alpine
     container_name: vigilux-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: vigilux
       POSTGRES_USER: vigilux_user
       POSTGRES_PASSWORD: vigilux_password
+      POSTGRES_DB: vigilux
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U vigilux_user -d vigilux"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
       retries: 5
     networks:
       - vigilux-network
 
-  # Backend API
   api:
-    build:
+    build: 
       context: ./backend
       dockerfile: Dockerfile
     container_name: vigilux-api
-    restart: unless-stopped
-    environment:
-      DATABASE_URL: postgresql://vigilux_user:vigilux_password@db:5432/vigilux
+    restart: always
     ports:
       - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://vigilux_user:vigilux_password@db:5432/vigilux
+      SECRET_KEY: temporary_secret_key_for_dev
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      CORS_ORIGINS: "http://localhost:3000"
     depends_on:
       db:
         condition: service_healthy
     networks:
       - vigilux-network
+    volumes:
+      - ./backend:/app
 
-  # Frontend Web
   web:
-    build:
+    build: 
       context: ./frontend
       dockerfile: Dockerfile
     container_name: vigilux-web
-    restart: unless-stopped
-    environment:
-      NEXT_PUBLIC_API_URL: http://host.docker.internal:8000
+    restart: always
     ports:
       - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
     depends_on:
       - api
     networks:
       - vigilux-network
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
 
-# Named volumes for data persistence
 volumes:
   postgres_data:
-    driver: local
 
-# Shared network for service communication
 networks:
   vigilux-network:
     driver: bridge

@@ -1,23 +1,12 @@
-# Frontend Dockerfile for Vigilux
-FROM node:20-alpine
+# Frontend Dockerfile
+FROM node:18-alpine
 
-# Set working directory
 WORKDIR /app
 
-# Set environment variables
-ENV NODE_ENV=development
+COPY package.json package-lock.json* ./
 
-# Copy package files
-COPY package*.json ./
+RUN npm install
 
-# Install dependencies
-RUN npm ci
-
-# Copy application code
 COPY . .
 
-# Expose the default Next.js port
-EXPOSE 3000
-
-# Start the development server
 CMD ["npm", "run", "dev"]
