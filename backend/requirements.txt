@@ -10,6 +10,7 @@ passlib[bcrypt]>=1.7.4
 python-multipart>=0.0.6
 httpx>=0.26.0
 email-validator>=2.1.0
+uuid6>=2024.1.12
 pytest>=8.0.0
 pytest-cov>=4.1.0
 ruff>=0.1.15
