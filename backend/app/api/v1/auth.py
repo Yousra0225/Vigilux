@@ -12,7 +12,16 @@ from app.models.user import User
 from app.schemas.token import Token
 from app.schemas.user import UserCreate, UserRead
 
+from app.api.deps import get_current_user
+
 router = APIRouter()
+
+@router.get("/me", response_model=UserRead)
+def read_users_me(current_user: Annotated[User, Depends(get_current_user)]) -> User:
+    """
+    Get current user.
+    """
+    return current_user
 
 @router.post("/login", response_model=Token)
 def login_access_token(

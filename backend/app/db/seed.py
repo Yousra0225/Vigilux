@@ -112,7 +112,7 @@ def seed_data():
                     name=comp_name,
                     url=f"https://{comp_name.lower().replace(' ', '')}.com",
                     score=random.randint(0, 100),
-                    tracking_status=TrackingStatus.ACTIVE
+                    status=TrackingStatus.ACTIVE
                 )
                 session.add(competitor)
                 session.commit()
@@ -132,7 +132,7 @@ def seed_data():
                     
                     event = Event(
                         competitor_id=competitor.id,
-                        event_type=e_type,
+                        type=e_type,
                         description=description,
                         score=score_val,
                         timestamp=datetime.utcnow() - timedelta(days=random.randint(0, 30))

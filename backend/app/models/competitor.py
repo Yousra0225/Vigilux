@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from .project import Project
     from .event import Event
 
-class CompetitorStatus(str, Enum):
+class TrackingStatus(str, Enum):
     ACTIVE = "active"
     ARCHIVED = "archived"
 
@@ -17,7 +17,7 @@ class Competitor(SQLModel, table=True):
     project_id: uuid.UUID = Field(foreign_key="project.id", nullable=False)
     name: str = Field(nullable=False)
     url: str = Field(nullable=False)
-    status: CompetitorStatus = Field(default=CompetitorStatus.ACTIVE, nullable=False)
+    status: TrackingStatus = Field(default=TrackingStatus.ACTIVE, nullable=False)
     score: Optional[float] = Field(default=None)
 
     project: "Project" = Relationship(back_populates="competitors")
