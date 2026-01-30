@@ -18,7 +18,8 @@ interface EventTimelineProps {
   loading: boolean;
 }
 
-const getEventIcon = (type: string) => {
+const getEventIcon = (type: string | undefined) => {
+  if (!type) return TrendingUp;
   switch (type.toLowerCase()) {
     case 'price': return DollarSign;
     case 'feature': return Zap;
@@ -28,8 +29,9 @@ const getEventIcon = (type: string) => {
   }
 };
 
-const getEventColor = (type: string, score: number) => {
+const getEventColor = (type: string | undefined, score: number) => {
     if (score > 70) return "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30";
+    if (!type) return "text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-800";
     switch (type.toLowerCase()) {
         case 'price': return "text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30";
         case 'feature': return "text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30";

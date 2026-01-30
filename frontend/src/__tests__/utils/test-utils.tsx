@@ -1,3 +1,4 @@
+import React from 'react'
 import { render, RenderOptions } from '@testing-library/react'
 import { ReactElement } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -26,6 +27,22 @@ vi.mock('next-themes', () => ({
   }),
   ThemeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
+
+// Mock AuthContext
+vi.mock('@/context/AuthContext', async (importOriginal) => {
+  const actual: any = await importOriginal()
+  return {
+    ...actual,
+    useAuth: vi.fn(() => ({
+      isAuthenticated: true,
+      user: { id: '1', email: 'test@example.com', plan_type: 'growth', is_verified: true },
+      loading: false,
+      login: vi.fn(),
+      logout: vi.fn(),
+      refreshUser: vi.fn(),
+    })),
+  }
+})
 
 const createTestQueryClient = () =>
   new QueryClient({
