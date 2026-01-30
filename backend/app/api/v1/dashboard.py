@@ -55,20 +55,26 @@ def get_dashboard_stats(
     # 4. Chart Data: Events per day for the last 30 days
     thirty_days_ago = today_start - timedelta(days=30)
     
-    # Group by date. Using cast(Event.timestamp, Date) handles the date truncation.
-    # Note: This might be dialect specific. Works in SQLite and Postgres.
+    # Group by date.
     chart_query = (
-        select(cast(Event.timestamp, Date).label("date"), func.count(Event.id).label("count"))
+        select(func.date(Event.timestamp).label("date"), func.count(Event.id).label("count"))
         .join(Competitor)
         .where(Competitor.project_id.in_(user_projects_subquery))
         .where(Event.timestamp >= thirty_days_ago)
-        .group_by(cast(Event.timestamp, Date))
-        .order_by(cast(Event.timestamp, Date))
+        .group_by(func.date(Event.timestamp))
+        .order_by(func.date(Event.timestamp))
     )
     
     results = session.exec(chart_query).all()
     
-    chart_data = [EventCount(date=r.date, count=r.count) for r in results]
+    chart_data = []
+    for r_date, r_count in results:
+        if isinstance(r_date, str):
+            from datetime import date
+            parsed_date = date.fromisoformat(r_date)
+        else:
+            parsed_date = r_date
+        chart_data.append(EventCount(date=parsed_date, count=r_count))
 
     return DashboardStats(
         total_competitors=total_competitors,
