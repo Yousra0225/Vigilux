@@ -161,6 +161,11 @@ out/
 # Production
 build/
 
+# Playwright
+playwright-report/
+test-results/
+playwright/.cache/
+
 # OS files
 .DS_Store
 Thumbs.db
