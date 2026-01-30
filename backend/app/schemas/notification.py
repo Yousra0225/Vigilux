@@ -8,6 +8,7 @@ class NotificationSettingBase(BaseModel):
     channel: NotificationChannel
     min_score: int
     enabled: bool
+    destination: Optional[str] = None
 
 
 class NotificationSettingCreate(NotificationSettingBase):
@@ -17,6 +18,7 @@ class NotificationSettingCreate(NotificationSettingBase):
 class NotificationSettingUpdate(BaseModel):
     min_score: Optional[int] = None
     enabled: Optional[bool] = None
+    destination: Optional[str] = None
 
 
 class NotificationSettingRead(NotificationSettingBase):

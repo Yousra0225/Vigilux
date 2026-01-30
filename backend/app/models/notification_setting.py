@@ -1,6 +1,6 @@
 import uuid
 from enum import Enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from sqlmodel import Field, SQLModel, Relationship
 import uuid6
 import sqlalchemy as sa
@@ -14,6 +14,9 @@ class NotificationChannel(str, Enum):
     SMS = "sms"
     WEBHOOK = "webhook"
     IN_APP = "in_app"
+    SLACK = "slack"
+    DISCORD = "discord"
+    WHATSAPP = "whatsapp"
 
     def __str__(self):
         return self.value
@@ -27,5 +30,6 @@ class NotificationSetting(SQLModel, table=True):
     )
     min_score: int = Field(default=70, nullable=False)
     enabled: bool = Field(default=True, nullable=False)
+    destination: Optional[str] = Field(default=None, nullable=True)
 
     user: "User" = Relationship(back_populates="notification_settings")
