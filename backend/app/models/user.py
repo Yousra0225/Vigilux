@@ -7,6 +7,7 @@ import uuid6
 
 if TYPE_CHECKING:
     from .project import Project
+    from .notification_setting import NotificationSetting
 
 import sqlalchemy as sa
 from sqlalchemy import Column, Enum as SAEnum
@@ -31,3 +32,4 @@ class User(SQLModel, table=True):
     is_verified: bool = Field(default=False, nullable=False)
     
     projects: List["Project"] = Relationship(back_populates="user")
+    notification_settings: List["NotificationSetting"] = Relationship(back_populates="user")

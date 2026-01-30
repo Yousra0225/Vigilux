@@ -9,7 +9,7 @@ from app.api.deps import get_current_user, get_session
 from app.models.user import User
 from app.models.competitor import Competitor
 from app.models.project import Project
-from app.schemas.competitor import CompetitorCreate, CompetitorRead, CompetitorUpdate, RadarResult
+from app.schemas.competitor import CompetitorCreate, CompetitorRead, CompetitorUpdate, RadarResult, CompetitorDetail
 from app.services.quota import QuotaService
 from app.services.scoring import ScoringService
 from app.models.event import EventType, Event
@@ -79,16 +79,15 @@ def radar_scan(
     """
     # Mock data generation
     mock_suffixes = ["Solutions", "Tech", "Systems", "AI", "Soft", "Hub", "Lab"]
+    mock_pitches = ["Disrupting the industry with AI-driven insights.", "Next-generation automation for modern enterprises.", "The complete toolkit for scaling digital infrastructure.", "Revolutionizing customer engagement through predictive modeling."]
+    mock_strengths = ["Strong community", "Rapid innovation", "User-friendly UI", "Low cost", "Global reach"]
+    mock_weaknesses = ["Limited integration", "High complexity", "New player", "Fragmented support"]
+    
     results = []
     
     for _ in range(5):
         name = f"{query.capitalize()} {random.choice(mock_suffixes)}"
-        # Generate a mock score using ScoringService (reusing calculate_score slightly abusively or just mocking it)
-        # The ScoringService.calculate_score expects EventType, let's just use it to generate a number or do it manually
-        # purely for the "Threat Score" simulation requested.
-        
-        # Simulating randomness for demo
-        threat_score = ScoringService.calculate_score(EventType.NEW_ENTRANT, "New market entry")
+        threat_score = random.randint(30, 95)
         
         market_presence = "Medium"
         if threat_score > 80:
@@ -100,12 +99,15 @@ def radar_scan(
             name=name,
             url=f"https://www.{name.lower().replace(' ', '')}.com",
             threat_score=threat_score,
-            market_presence=market_presence
+            market_presence=market_presence,
+            pitch=random.choice(mock_pitches),
+            strengths=random.sample(mock_strengths, 2),
+            weaknesses=random.sample(mock_weaknesses, 2)
         ))
         
     return results
 
-@router.get("/{competitor_id}", response_model=CompetitorRead)
+@router.get("/{competitor_id}", response_model=CompetitorDetail)
 def read_competitor(
     *,
     session: Annotated[Session, Depends(get_session)],
@@ -113,7 +115,7 @@ def read_competitor(
     competitor_id: uuid.UUID,
 ) -> Any:
     """
-    Get competitor by ID.
+    Get competitor by ID with detailed insights.
     """
     competitor = session.get(Competitor, competitor_id)
     if not competitor:
@@ -123,8 +125,20 @@ def read_competitor(
     project = session.get(Project, competitor.project_id)
     if not project or project.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Competitor not found")
-        
-    return competitor
+    
+    # Generate mock details
+    mock_pitches = ["Disrupting the industry with AI-driven insights.", "Next-generation automation for modern enterprises.", "The complete toolkit for scaling digital infrastructure.", "Revolutionizing customer engagement through predictive modeling."]
+    mock_strengths = ["Strong community", "Rapid innovation", "User-friendly UI", "Low cost", "Global reach"]
+    mock_weaknesses = ["Limited integration", "High complexity", "New player", "Fragmented support"]
+    
+    return CompetitorDetail(
+        **competitor.model_dump(),
+        pitch=random.choice(mock_pitches),
+        estimated_revenue=f"${random.randint(1, 50)}M",
+        strengths=random.sample(mock_strengths, 2),
+        weaknesses=random.sample(mock_weaknesses, 2),
+        market_sentiment=random.choice(["Positive", "Neutral", "Mixed"])
+    )
 
 @router.patch("/{competitor_id}", response_model=CompetitorRead)
 def update_competitor(

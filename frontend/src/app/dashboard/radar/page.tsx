@@ -11,7 +11,9 @@ interface RadarCompetitor {
   name: string;
   url: string;
   threat_score: number;
-  insights: any;
+  pitch: string;
+  strengths: string[];
+  weaknesses: string[];
 }
 
 interface Project {
@@ -43,10 +45,15 @@ export default function RadarPage() {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (searchQuery.length < 3) {
+      toast.error('Search query must be at least 3 characters');
+      return;
+    }
     setIsSearching(true);
     try {
-      // The API currently doesn't take a query param but we can simulate it
-      const response = await api.get<RadarCompetitor[]>('/api/v1/radar/');
+      const response = await api.get<RadarCompetitor[]>('/api/v1/competitors/radar', {
+        params: { query: searchQuery }
+      });
       setResults(response.data);
       toast.success(`Found ${response.data.length} potential competitors`);
     } catch (error) {
@@ -155,15 +162,15 @@ export default function RadarPage() {
                   
                   <div className={cn("space-y-2 transition-all", isStarter && "blur-[3px] select-none pointer-events-none")}>
                     <p className="text-xs text-gray-600 dark:text-gray-400 italic mb-2">
-                      "{competitor.insights?.pitch}"
+                      "{competitor.pitch}"
                     </p>
                     <div className="flex flex-wrap gap-1">
-                      {competitor.insights?.strengths?.map((strength: string, i: number) => (
+                      {competitor.strengths?.map((strength: string, i: number) => (
                         <span key={i} className="text-[10px] bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 px-2 py-0.5 rounded-full border border-green-100 dark:border-green-800">
                           {strength}
                         </span>
                       ))}
-                      {competitor.insights?.weaknesses?.map((weakness: string, i: number) => (
+                      {competitor.weaknesses?.map((weakness: string, i: number) => (
                         <span key={i} className="text-[10px] bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 px-2 py-0.5 rounded-full border border-red-100 dark:border-red-800">
                           {weakness}
                         </span>

@@ -14,7 +14,7 @@ export interface CompetitorDetail {
   strengths: string[];
   weaknesses: string[];
   market_sentiment: string;
-  tracking_status: 'active' | 'archived';
+  status: 'ACTIVE' | 'ARCHIVED';
 }
 
 interface QuickViewModalProps {

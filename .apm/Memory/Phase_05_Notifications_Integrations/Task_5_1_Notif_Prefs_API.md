@@ -1,87 +1,116 @@
-# Task 5.1 - Notification Preferences API - Implementation Log
+# Task 5.1 - Notification Preferences API
 
-## Task Reference
-- **Task**: Task 5.1 - Notification Preferences API
-- **Agent**: Agent_Backend_Business
-- **Date**: 2026-01-16
-- **Status**: Completed
+## Overview
+Implemented the backend infrastructure for user-configurable notification preferences based on event scores.
 
-## Implementation Summary
+## Implementation Details
 
 ### 1. Database Model
-Created `NotificationSettings` model in `backend/app/models/notification.py`:
+**File:** `backend/app/models/notification_setting.py`
 
-**Fields:**
-- `id`: UUID (primary key)
-- `user_id`: UUID (foreign key to users.id, CASCADE delete)
-- `channel`: NotificationChannel enum (EMAIL, SLACK, DISCORD, WHATSAPP)
-- `min_score`: Integer (0-100, default 50)
-- `enabled`: Boolean (default True)
-- `created_at`: DateTime
-- `updated_at`: DateTime
+Created the `NotificationSetting` model with the following schema:
+- `id`: UUID primary key
+- `user_id`: Foreign key to user table
+- `channel`: Notification channel enum (EMAIL, SMS, WEBHOOK, IN_APP)
+- `min_score`: Minimum score threshold for notifications (default: 70)
+- `enabled`: Boolean flag to enable/disable channel
 
-**Additional Classes:**
-- `NotificationSettingsCreate`: Input validation for creation
-- `NotificationSettingsRead`: Output schema
-- `NotificationSettingsUpdate`: Input validation for updates
+Also updated:
+- `backend/app/models/user.py` - Added relationship to `notification_settings`
+- `backend/app/models/__init__.py` - Exported `NotificationSetting` and `NotificationChannel`
 
-### 2. API Endpoints
-Created `backend/app/api/v1/notifications.py` with the following endpoints:
+### 2. Schemas
+**File:** `backend/app/schemas/notification.py`
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/users/me/notifications` | Retrieve all notification settings for current user |
-| POST | `/api/v1/users/me/notifications` | Create a new notification setting |
-| PATCH | `/api/v1/users/me/notifications/{setting_id}` | Update a specific notification setting |
-| DELETE | `/api/v1/users/me/notifications/{setting_id}` | Delete a specific notification setting |
+Created Pydantic schemas for API validation:
+- `NotificationSettingBase` - Base fields
+- `NotificationSettingCreate` - For creating settings
+- `NotificationSettingUpdate` - For updating settings (min_score, enabled)
+- `NotificationSettingRead` - For response serialization
+- `NotificationSettingsList` - For list responses
 
-**Features:**
-- All endpoints require authentication via `get_current_user` dependency
-- Automatic initialization of default settings (email channel, min_score=50, enabled=True) on first GET
-- Ownership verification for all operations
-- Proper error handling with HTTPException
+### 3. API Endpoints
+**File:** `backend/app/api/v1/notifications.py`
 
-### 3. Initialization
-Default notification settings are automatically created when:
-- A user first accesses `GET /api/v1/users/me/notifications` and has no settings
-- Defaults: channel=EMAIL, min_score=50, enabled=True
+Implemented three endpoints:
 
-### 4. Integration Updates
+#### GET `/api/v1/users/me/notifications`
+- Returns all notification settings for the current user
+- Authentication: Required (via `get_current_user`)
 
-**Files Modified:**
-1. `backend/app/models/user.py`:
-   - Added TYPE_CHECKING import for NotificationSettings
-   - Added `notification_settings` relationship to User model
+#### PATCH `/api/v1/users/me/notifications/{channel}`
+- Updates a specific notification channel setting
+- Accepts: `min_score` (optional), `enabled` (optional)
+- Returns: Updated setting
+- Authentication: Required
 
-2. `backend/app/models/__init__.py`:
-   - Exported `NotificationSettings` and `NotificationChannel`
+#### POST `/api/v1/users/me/notifications/reset`
+- Resets notification settings to defaults
+- Default settings:
+  - EMAIL: min_score=70, enabled=True
+  - SMS: min_score=85, enabled=False
+  - WEBHOOK: min_score=75, enabled=False
+  - IN_APP: min_score=60, enabled=True
 
-3. `backend/app/main.py`:
-   - Imported notifications router
-   - Added router to API at `/api/v1/users`
+### 4. User Registration Integration
+**File:** `backend/app/api/v1/auth.py`
 
-### 5. Database Migration
-Generated Alembic migration: `e755e2f7ecec_add_notification_settings_table.py`
+Modified the `/auth/register` endpoint to initialize default notification settings for new users. Uses `session.flush()` to get the user ID before creating settings.
 
-**Migration Details:**
-- Creates `notification_settings` table with all required fields
-- Creates foreign key constraint to users.id with CASCADE delete
-- Creates enum type `notificationchannel` for channel field
+### 5. Router Registration
+**File:** `backend/app/main.py`
 
-## Success Criteria Met
-- [x] Database model created with all required fields
-- [x] API endpoints implemented for GET and PATCH operations
-- [x] Default settings are initialized automatically
-- [x] All endpoints are protected with authentication
-- [x] Ownership verification implemented
-- [x] Alembic migration generated
+Added the notifications router to the main FastAPI application:
+```python
+app.include_router(notifications.router, prefix=settings.API_V1_STR, tags=["notifications"])
+```
 
-## Deliverables
-- `backend/app/models/notification.py` - Database model
-- `backend/app/api/v1/notifications.py` - API endpoints
-- `backend/alembic/versions/e755e2f7ecec_add_notification_settings_table.py` - Migration
+## API Usage Examples
 
-## Notes
-- The API route is mounted at `/api/v1/users/` (prefix) so the full path for getting notifications is `/api/v1/users/me/notifications`
-- Multiple notification settings can be created per user (one per channel)
-- The system will auto-create default email settings on first access if none exist
+### Get Notification Settings
+```bash
+GET /api/v1/users/me/notifications
+Authorization: Bearer <token>
+```
+
+Response:
+```json
+[
+  {
+    "id": "uuid",
+    "user_id": "uuid",
+    "channel": "email",
+    "min_score": 70,
+    "enabled": true
+  }
+]
+```
+
+### Update Notification Setting
+```bash
+PATCH /api/v1/users/me/notifications/email
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "min_score": 75,
+  "enabled": true
+}
+```
+
+## Default Settings for New Users
+| Channel  | Min Score | Enabled |
+|----------|-----------|---------|
+| EMAIL    | 70        | Yes     |
+| SMS      | 85        | No      |
+| WEBHOOK  | 75        | No      |
+| IN_APP   | 60        | Yes     |
+
+## Dependencies
+- User Authentication (Task 2.4) - For `get_current_user` dependency
+- Event Model (Task 3.3) - Events are scored and trigger notifications
+
+## Success Criteria
+- [x] User can update their score threshold via API
+- [x] Preferences are correctly persisted in the DB
+- [x] Default settings initialized on user registration

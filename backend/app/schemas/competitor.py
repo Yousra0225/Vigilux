@@ -26,8 +26,18 @@ class CompetitorRead(CompetitorBase):
     class Config:
         from_attributes = True
 
+class CompetitorDetail(CompetitorRead):
+    pitch: str
+    estimated_revenue: str
+    strengths: List[str]
+    weaknesses: List[str]
+    market_sentiment: str
+
 class RadarResult(BaseModel):
     name: str
     url: str
     threat_score: int
     market_presence: str  # e.g., "High", "Medium", "Low"
+    pitch: str
+    strengths: List[str]
+    weaknesses: List[str]

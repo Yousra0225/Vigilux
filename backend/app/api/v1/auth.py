@@ -9,6 +9,7 @@ from app.core import security
 from app.core.config import settings
 from app.core.db import get_session
 from app.models.user import User
+from app.models.notification_setting import NotificationSetting, NotificationChannel
 from app.schemas.token import Token
 from app.schemas.user import UserCreate, UserRead
 
@@ -50,7 +51,7 @@ def register_user(
     session: Annotated[Session, Depends(get_session)]
 ) -> UserRead:
     """
-    Create new user.
+    Create new user with default notification settings.
     """
     statement = select(User).where(User.email == user_in.email)
     user = session.exec(statement).first()
@@ -59,13 +60,46 @@ def register_user(
             status_code=400,
             detail="The user with this email already exists in the system",
         )
-    
+
     user = User(
         email=user_in.email,
         hashed_password=security.get_password_hash(user_in.password),
         is_verified=False
     )
     session.add(user)
+    session.flush()  # Flush to get the user ID before creating notification settings
+
+    # Create default notification settings
+    default_settings = [
+        NotificationSetting(
+            user_id=user.id,
+            channel=NotificationChannel.EMAIL,
+            min_score=70,
+            enabled=True
+        ),
+        NotificationSetting(
+            user_id=user.id,
+            channel=NotificationChannel.SMS,
+            min_score=85,
+            enabled=False
+        ),
+        NotificationSetting(
+            user_id=user.id,
+            channel=NotificationChannel.WEBHOOK,
+            min_score=75,
+            enabled=False
+        ),
+        NotificationSetting(
+            user_id=user.id,
+            channel=NotificationChannel.IN_APP,
+            min_score=60,
+            enabled=True
+        ),
+    ]
+
+    for setting in default_settings:
+        session.add(setting)
+
     session.commit()
     session.refresh(user)
     return user

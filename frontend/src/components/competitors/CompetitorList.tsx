@@ -9,7 +9,7 @@ export interface Competitor {
   name: string;
   url?: string;
   score: number;
-  tracking_status: 'active' | 'archived';
+  status: 'ACTIVE' | 'ARCHIVED';
 }
 
 interface CompetitorListProps {
