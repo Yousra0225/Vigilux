@@ -1,0 +1,13 @@
+{
+  "name": "vigilux-e2e",
+  "version": "1.0.0",
+  "description": "End-to-end tests for Vigilux",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.41.0",
+    "typescript": "^5.3.3"
+  }
+}
