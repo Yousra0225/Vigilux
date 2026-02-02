@@ -34,7 +34,7 @@
 ### Task 7.1.2 – Celery Application Setup - Agent_Backend_Async
 **Objective:** Initialize the Celery application instance in the backend codebase.
 **Output:** `backend/app/core/celery_app.py`.
-**Guidance:** **Depends on: Task 7.1.1 Output**
+**Guidance:** **Depends on: Task 7.1.1 Output by Agent_DevOps**
 - Create `celery_app.py` in core.
 - Initialize `Celery('vigilux')` instance.
 - Configure `broker_url` and `result_backend` using settings from `config.py`.
@@ -139,7 +139,7 @@
 ### Task 7.4.2 – Celery Beat Service - Agent_DevOps
 **Objective:** Add the scheduler service to the Docker stack.
 **Output:** Updated `docker-compose.yml`.
-**Guidance:** **Depends on: Task 7.1.3 Output**
+**Guidance:** **Depends on: Task 7.1.3 Output by Agent_DevOps**
 - Add `beat` service using the same backend image.
 - Command: `celery -A app.core.celery_app beat -l info`.
 - Ensure it shares the `redis` network.
@@ -153,3 +153,37 @@
    - Find all **Ultimate** users -> Scan their competitors if last_update > 24h.
    - Find all **Growth** users -> Scan if last_update > 7 days.
    - **Starter** users -> Do not auto-scan.
+
+## Phase 7E: Real-time User Feedback
+
+### Task 7.5.1 – WebSocket Manager & Endpoint - Agent_Backend_Async
+**Objective:** Enable real-time communication for task progress updates.
+**Output:** `backend/app/api/v1/websockets.py`.
+**Guidance:**
+- Implement a `ConnectionManager` to track active user sessions.
+- Create `/ws/notifications/{user_id}` endpoint.
+- Use Redis Pub/Sub to listen for task events and forward them to the correct user's WebSocket.
+
+### Task 7.5.2 – Task Progress Emitter - Agent_Backend_Async
+**Objective:** Update background tasks to publish their status changes.
+**Output:** Updates to `scraping.py` and `analysis.py`.
+**Guidance:** **Depends on: Task 7.5.1 Output**
+- In `scrape_competitor_task`, publish "SCRAPING_STARTED" and "SCRAPING_COMPLETE" events to Redis.
+- In `analyze_competitor_task`, publish "ANALYSIS_STARTED" and "ANALYSIS_COMPLETE".
+- Ensure payload includes `competitor_id` and `user_id`.
+
+### Task 7.5.3 – Frontend WebSocket Hook - Agent_Frontend_Realtime
+**Objective:** Create a reusable hook to listen for real-time updates.
+**Output:** `frontend/src/hooks/use-socket.ts`.
+**Guidance:** **Depends on: Task 7.5.1 Output by Agent_Backend_Async**
+- Implement `useWebSocket` hook that connects to the backend on mount.
+- Handle reconnection logic.
+- Expose a listener for specific event types (e.g., `TASK_UPDATE`).
+
+### Task 7.5.4 – Dashboard Refresh UI - Agent_Frontend_Realtime
+**Objective:** Integrate the manual refresh button and progress indicators.
+**Output:** Updates to `DashboardPage` and `CompetitorCard`.
+**Guidance:** **Depends on: Task 7.5.3 Output, Task 7.4.1 Output by Agent_Backend_Async**
+- Add "Refresh" button to Competitor cards (visible if manual refresh is allowed).
+- When clicked, call API and display a loading spinner/progress bar.
+- Listen via WebSocket for "ANALYSIS_COMPLETE" to re-fetch and update the UI data automatically.
