@@ -159,12 +159,11 @@ def scrape_competitor_task(
         # Step 4: Trigger the analysis task (placeholder for Phase 7C)
         # This will chain the scraping task to the AI analysis task
         try:
-            # Placeholder: analyze_competitor_task will be implemented in Phase 7C
-            # For now, we can either delay a stub or log the intention
-            logger.info(f"Scraping complete for {competitor_id}, would trigger analysis task")
-            # When Phase 7C is complete:
-            # from app.tasks.analysis import analyze_competitor_task
-            # analyze_competitor_task.delay(str(competitor.id))
+            # Import here to avoid circular dependencies
+            from app.tasks.analysis import analyze_competitor_task
+            
+            logger.info(f"Triggering analysis task for {competitor_id}")
+            analyze_competitor_task.delay(str(competitor.id), normalized_data)
 
         except Exception as e:
             logger.warning(f"Could not trigger analysis task: {e}")
