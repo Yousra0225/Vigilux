@@ -1,15 +1,11 @@
 from celery import Celery
-import os
+from app.core.config import settings
 
-# Get Redis configuration from environment variables
-REDIS_HOST = os.getenv("REDIS_HOST", "redis")
-REDIS_PORT = os.getenv("REDIS_PORT", "6379")
-REDIS_DB = os.getenv("REDIS_DB", "0")
-
+# Initialize Celery application named 'vigilux'
 celery_app = Celery(
-    "worker",
-    broker=f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}",
-    backend=f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
+    "vigilux",
+    broker=settings.REDIS_URL,
+    backend=settings.REDIS_URL
 )
 
 celery_app.conf.update(
@@ -18,6 +14,7 @@ celery_app.conf.update(
     result_serializer="json",
     timezone="UTC",
     enable_utc=True,
+    broker_connection_retry_on_startup=True,
     task_routes={
         "app.tasks.radar.*": {"queue": "radar"},
         "app.tasks.scoring.*": {"queue": "scoring"},
