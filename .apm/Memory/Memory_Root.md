@@ -61,3 +61,12 @@
     *   [.apm/Memory/Phase_06_QA_Finalization/Task_6_4_Documentation.md](.apm/Memory/Phase_06_QA_Finalization/Task_6_4_Documentation.md)
     *   [.apm/Memory/Phase_06_QA_Finalization/Task_6_5_Final_Polish.md](.apm/Memory/Phase_06_QA_Finalization/Task_6_5_Final_Polish.md)
     *   [.apm/Memory/Phase_06_QA_Finalization/Debug_8_1_Backend_Fix.md](.apm/Memory/Phase_06_QA_Finalization/Debug_8_1_Backend_Fix.md) (Stabilisation critique Backend/Auth)
+
+## Phase 07 – Real Engines Summary
+*   **Outcome:** Infrastructure for async tasks and scraping established. Configured Redis, initialized Celery app and worker, and implemented robust base retry logic for resilient task execution.
+*   **Involved Agents:** Agent_DevOps, Agent_Backend_Async.
+*   **Logs:**
+    *   [.apm/Memory/Phase_07_Real_Engines/Task_7_1_1_Redis_Config.md](.apm/Memory/Phase_07_Real_Engines/Task_7_1_1_Redis_Config.md)
+    *   [.apm/Memory/Phase_07_Real_Engines/Task_7_1_2_Celery_Setup.md](.apm/Memory/Phase_07_Real_Engines/Task_7_1_2_Celery_Setup.md)
+    *   [.apm/Memory/Phase_07_Real_Engines/Task_7_1_3_Worker_Container.md](.apm/Memory/Phase_07_Real_Engines/Task_7_1_3_Worker_Container.md)
+    *   [.apm/Memory/Phase_07_Real_Engines/Task_7_1_4_Base_Retry_Logic.md](.apm/Memory/Phase_07_Real_Engines/Task_7_1_4_Base_Retry_Logic.md)
