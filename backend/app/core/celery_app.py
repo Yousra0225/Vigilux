@@ -21,8 +21,9 @@ celery_app.conf.update(
     task_routes={
         "app.tasks.radar.*": {"queue": "radar"},
         "app.tasks.scoring.*": {"queue": "scoring"},
+        "app.tasks.scraping.*": {"queue": "radar"},
     }
 )
 
 # Load tasks
-celery_app.autodiscover_tasks(["app.tasks.radar", "app.tasks.scoring"], force=True)
+celery_app.autodiscover_tasks(["app.tasks.radar", "app.tasks.scoring", "app.tasks.scraping"], force=True)
