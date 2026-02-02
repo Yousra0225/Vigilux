@@ -67,4 +67,35 @@ class ApifyService:
             logger.error(f"Error running actor {actor_id}: {str(e)}")
             raise
 
+    def scrape_google_maps(self, name: str, location: str) -> List[Dict[str, Any]]:
+        """
+        Scrapes Google Maps for a specific competitor by name and location.
+        
+        Args:
+            name: The name of the competitor.
+            location: The geographic location or address.
+            
+        Returns:
+            A list of dictionary items representing the scraped data.
+        """
+        run_input = {
+            "searchStrings": [f"{name} {location}"],
+            "maxReviews": 20,
+            "exportPlaceUrls": True,
+        }
+        
+        logger.info(f"Scraping Google Maps for: {name} in {location}")
+        
+        try:
+            # Using compass/google-maps-scraper as it's a reliable choice
+            results = self.run_actor(
+                actor_id="compass/google-maps-scraper",
+                run_input=run_input
+            )
+            return results
+        except Exception as e:
+            logger.error(f"Google Maps scraping failed for {name}: {str(e)}")
+            # Return empty list on failure to allow the pipeline to continue
+            return []
+
 apify_service = ApifyService()
