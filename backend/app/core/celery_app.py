@@ -1,11 +1,14 @@
 from celery import Celery
 from app.core.config import settings
+from app.tasks.base import BaseTask
 
 # Initialize Celery application named 'vigilux'
+# Set BaseTask as the default task class for automatic retry behavior
 celery_app = Celery(
     "vigilux",
     broker=settings.REDIS_URL,
-    backend=settings.REDIS_URL
+    backend=settings.REDIS_URL,
+    task_base=BaseTask
 )
 
 celery_app.conf.update(
