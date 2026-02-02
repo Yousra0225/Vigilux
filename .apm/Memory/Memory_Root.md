@@ -32,16 +32,6 @@
     *   [.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_4_Competitor_Radar_API.md](.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_4_Competitor_Radar_API.md)
     *   [.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_5_Dashboard_Stats_API.md](.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_5_Dashboard_Stats_API.md)
 
-## Phase 03 – Core Business Logic & Data Mocks Summary
-*   **Outcome:** Developed the core intelligence engine and plan enforcement logic. Implemented an AI-scoring simulator, multi-tier quota management, and a comprehensive data seeder for development. Delivered high-value API endpoints for competitor management, market radar, and dashboard analytics.
-*   **Involved Agents:** Agent_Data_IA, Agent_Backend_Core, Agent_Backend_Business.
-*   **Logs:**
-    *   [.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_1_Data_Seeder.md](.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_1_Data_Seeder.md)
-    *   [.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_2_Quota_Management.md](.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_2_Quota_Management.md)
-    *   [.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_3_IA_Scoring.md](.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_3_IA_Scoring.md)
-    *   [.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_4_Competitor_Radar_API.md](.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_4_Competitor_Radar_API.md)
-    *   [.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_5_Dashboard_Stats_API.md](.apm/Memory/Phase_03_Core_Logic_Mocks/Task_3_5_Dashboard_Stats_API.md)
-
 ## Phase 04 – Dashboard & UI Implementation Summary
 *   **Outcome:** Delivered a fully responsive and functional dashboard UI. Key features include an analytics overview with Recharts, a detailed competitor management list with activity timelines, and an AI-powered global radar. Implemented plan-aware UI logic (feature blurring) and seamless navigation shell with theme support.
 *   **Involved Agents:** Agent_Frontend_Core, Agent_Frontend_App.
@@ -70,4 +60,4 @@
     *   [.apm/Memory/Phase_06_QA_Finalization/Task_6_3_E2E_Tests.md](.apm/Memory/Phase_06_QA_Finalization/Task_6_3_E2E_Tests.md)
     *   [.apm/Memory/Phase_06_QA_Finalization/Task_6_4_Documentation.md](.apm/Memory/Phase_06_QA_Finalization/Task_6_4_Documentation.md)
     *   [.apm/Memory/Phase_06_QA_Finalization/Task_6_5_Final_Polish.md](.apm/Memory/Phase_06_QA_Finalization/Task_6_5_Final_Polish.md)
-
+    *   [.apm/Memory/Phase_06_QA_Finalization/Debug_8_1_Backend_Fix.md](.apm/Memory/Phase_06_QA_Finalization/Debug_8_1_Backend_Fix.md) (Stabilisation critique Backend/Auth)

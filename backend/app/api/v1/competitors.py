@@ -1,9 +1,10 @@
 import uuid
-from typing import List, Any, Annotated
+from typing import List, Any, Annotated, Optional
 import random
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session, select, func
+from celery.result import AsyncResult
 
 from app.api.deps import get_current_user, get_session
 from app.models.user import User
@@ -13,6 +14,8 @@ from app.schemas.competitor import CompetitorCreate, CompetitorRead, CompetitorU
 from app.services.quota import QuotaService
 from app.services.scoring import ScoringService
 from app.models.event import EventType, Event
+from app.tasks.radar import perform_market_scan
+from app.tasks.scoring import calculate_competitor_score
 
 router = APIRouter()
 
@@ -67,14 +70,35 @@ def create_competitor(
     session.refresh(competitor)
     return competitor
 
-@router.get("/radar", response_model=List[RadarResult])
+@router.get("/radar/scan", response_model=dict)
 def radar_scan(
+    *,
+    current_user: Annotated[User, Depends(get_current_user)],
+    query: str = Query(..., min_length=3, description="Market keyword to scan"),
+    num_results: int = Query(5, ge=1, le=20, description="Number of results to return")
+) -> Any:
+    """
+    Trigger an async market scan for competitors.
+    Returns immediately with a task_id for tracking progress.
+    """
+    # Trigger async task
+    task = perform_market_scan.delay(query, str(current_user.id), num_results)
+
+    return {
+        "task_id": task.id,
+        "status": "PENDING",
+        "message": f"Market scan for '{query}' started. Use /tasks/{task.id} to check status."
+    }
+
+
+@router.get("/radar", response_model=List[RadarResult])
+def radar_scan_sync(
     *,
     current_user: Annotated[User, Depends(get_current_user)],
     query: str = Query(..., min_length=3, description="Market keyword to scan")
 ) -> Any:
     """
-    Simulate a market scan for competitors.
+    Synchronous market scan for competitors (legacy endpoint).
     Returns mock data with generated threat scores.
     """
     # Mock data generation
@@ -82,13 +106,13 @@ def radar_scan(
     mock_pitches = ["Disrupting the industry with AI-driven insights.", "Next-generation automation for modern enterprises.", "The complete toolkit for scaling digital infrastructure.", "Revolutionizing customer engagement through predictive modeling."]
     mock_strengths = ["Strong community", "Rapid innovation", "User-friendly UI", "Low cost", "Global reach"]
     mock_weaknesses = ["Limited integration", "High complexity", "New player", "Fragmented support"]
-    
+
     results = []
-    
+
     for _ in range(5):
         name = f"{query.capitalize()} {random.choice(mock_suffixes)}"
         threat_score = random.randint(30, 95)
-        
+
         market_presence = "Medium"
         if threat_score > 80:
             market_presence = "High"
@@ -104,8 +128,41 @@ def radar_scan(
             strengths=random.sample(mock_strengths, 2),
             weaknesses=random.sample(mock_weaknesses, 2)
         ))
-        
+
     return results
+
+
+@router.get("/tasks/{task_id}", response_model=dict)
+def get_task_status(
+    *,
+    current_user: Annotated[User, Depends(get_current_user)],
+    task_id: str
+) -> Any:
+    """
+    Check the status of an async task.
+    Returns task status and result if available.
+    """
+    task = AsyncResult(task_id)
+
+    response = {
+        "task_id": task_id,
+        "status": task.status,
+    }
+
+    if task.state == "PENDING":
+        response["message"] = "Task is waiting to be processed."
+    elif task.state == "STARTED":
+        response["message"] = "Task has been started."
+    elif task.state == "SUCCESS":
+        response["result"] = task.result
+        response["message"] = "Task completed successfully."
+    elif task.state == "FAILURE":
+        response["error"] = str(task.info)
+        response["message"] = "Task failed."
+    else:
+        response["message"] = f"Task state: {task.state}"
+
+    return response
 
 @router.get("/{competitor_id}", response_model=CompetitorDetail)
 def read_competitor(

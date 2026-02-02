@@ -1,259 +1,155 @@
 # Vigilux – APM Implementation Plan
 **Memory Strategy:** Dynamic-MD
 **Last Modification:** Plan creation by the Setup Agent.
-**Project Overview:** Vigilux is a proactive AI-driven competitive intelligence SaaS. It transforms passive monitoring into actionable "Breakthrough Signals" (Features, Prices, Financial Health, New Entrants). The platform features a global radar for market discovery and surgical tracking for selected competitors, with tiered access (Starter, Growth, Ultimate), a modern Next.js/FastAPI stack, and full Dockerization.
+**Project Overview:** Vigilux is a competitive intelligence SaaS that transforms passive monitoring into actionable signals. Phase 1-4 are prototyped (Mock Data). The current focus is **Phase 7: Real Engines**, implementing the actual backend logic with Redis/Celery (Async), Apify (Scraping), Gemini (AI), and a tiered scheduling system (Starter/Growth/Ultimate).
 
-## Phase 1: Foundation & Infrastructure
+## Phase 1: Foundation & Infrastructure (Completed/Maintenance)
+*Reference Only - See existing codebase*
 
-### Task 1.1 – Monorepo Structure & Basic Boilerplates - Agent_DevOps
-**Objective:** Establish the project's root structure and initialize package managers.
-**Output:** Folder structure and initialization files.
-**Guidance:** Ensure all directories follow the discussed monorepo pattern.
+## Phase 2: Database Schema & Authentication (Completed/Maintenance)
+*Reference Only - See existing codebase*
 
-- Create backend/, frontend/, and infra/ directories.
-- Initialize package.json in frontend and requirements.txt/pyproject.toml in backend.
-- Set up root-level .gitignore and basic README.md.
+## Phase 3: Core Logic & Mocks (Completed/Maintenance)
+*Reference Only - See existing codebase*
 
-### Task 1.2 – Docker & Docker Compose Configuration - Agent_DevOps
-**Objective:** Containerize the application for consistent local development.
-**Output:** Dockerfiles and docker-compose.yml.
-**Guidance:** **Depends on: Task 1.1 Output**
-1. Create backend/Dockerfile using a Python 3.11+ base image.
-2. Create frontend/Dockerfile using a Node.js base image.
-3. Create root docker-compose.yml including PostgreSQL 15+, api, and web services.
-4. Configure health checks for the database to ensure it's ready before the API starts.
+## Phase 4: Dashboard & UI Implementation (Completed/Maintenance)
+*Reference Only - See existing codebase*
 
-### Task 1.3 – GitHub Actions CI Pipeline Setup - Agent_DevOps
-**Objective:** Automate quality checks (Linting & Testing).
-**Output:** .github/workflows/ci.yml.
-**Guidance:** **Depends on: Task 1.4 Output by Agent_Backend_Core, Task 1.5 Output by Agent_Frontend_Core**
-- Define linting jobs using Ruff/Black for Python and ESLint/Prettier for JS/TS.
-- Set up a test job that runs Pytest and Vitest.
-- Configure triggers for push and pull requests on main and develop branches.
+## Phase 5: Notifications & Integrations (Pending Future)
+*Deferred until Real Engines are active*
 
-### Task 1.4 – Base FastAPI Setup & Clean Architecture Skeleton - Agent_Backend_Core
-**Objective:** Initialize the backend with a scalable architecture.
-**Output:** FastAPI boilerplate with domain-driven structure.
-**Guidance:** **Depends on: Task 1.1 Output by Agent_DevOps**
-1. Install FastAPI, Uvicorn, and Pydantic.
-2. Create app/ structure: api/, core/ (config, security), models/, services/, and repositories/.
-3. Implement a basic health-check endpoint (/health).
-4. Configure CORS to allow local frontend access.
+## Phase 6: QA & Finalization (Continuous)
+*Ongoing/Deferred*
 
-### Task 1.5 – Base Next.js Setup & Tailwind Configuration - Agent_Frontend_Core
-**Objective:** Initialize the frontend with modern UI tools.
-**Output:** Next.js project with Tailwind CSS.
-**Guidance:** **Depends on: Task 1.1 Output by Agent_DevOps**
-- Initialize Next.js with TypeScript in the frontend/ folder.
-- Install and configure Tailwind CSS and Shadcn/UI (if applicable).
-- Create a basic homepage with a placeholder for the Dark/Light mode toggle.
+## Phase 7A: Infrastructure & Async Backbone
 
-## Phase 2: Database Schema & Authentication
+### Task 7.1.1 – Redis Service Configuration - Agent_DevOps
+**Objective:** Add Redis to the container stack to serve as the message broker for Celery.
+**Output:** Updated `docker-compose.yml` and `.env.example`.
+**Guidance:** Use standard redis:alpine image. Ensure persistence with a volume.
+- Add `redis` service to `docker-compose.yml` mapping port 6379.
+- Configure a named volume `redis_data` for data persistence.
+- Add `REDIS_URL=redis://redis:6379/0` to environment variables.
 
-### Task 2.1 – PostgreSQL Schema Design - Agent_Data_IA
-**Objective:** Design a robust relational schema for Vigilux.
-**Output:** SQL schema definition or ERD description.
-**Guidance:** **Depends on: Task 1.2 Output by Agent_DevOps**
-- Define 'users' table (UUID, email, hashed_password, plan_type, trial_start_date, is_verified).
-- Define 'projects' table (UUID, user_id, url, description, created_at).
-- Define 'competitors' table (UUID, project_id, name, url, score, tracking_status).
-- Define 'events' table (UUID, competitor_id, event_type, description, score, timestamp).
+### Task 7.1.2 – Celery Application Setup - Agent_Backend_Async
+**Objective:** Initialize the Celery application instance in the backend codebase.
+**Output:** `backend/app/core/celery_app.py`.
+**Guidance:** **Depends on: Task 7.1.1 Output**
+- Create `celery_app.py` in core.
+- Initialize `Celery('vigilux')` instance.
+- Configure `broker_url` and `result_backend` using settings from `config.py`.
+- Set `broker_connection_retry_on_startup = True`.
 
-### Task 2.2 – SQLAlchemy Integration & Migrations - Agent_Backend_Core
-**Objective:** Set up ORM and database migration system.
-**Output:** Database models and Alembic configuration.
-**Guidance:** **Depends on: Task 2.1 Output by Agent_Data_IA**
-1. Configure database connection using SQLAlchemy and SQLModel.
-2. Translate the schema design into Python models.
-3. Initialize Alembic and generate the initial migration script.
+### Task 7.1.3 – Worker Container Configuration - Agent_DevOps
+**Objective:** Create a dedicated Docker service to run the Celery worker process.
+**Output:** Updated `docker-compose.yml`.
+**Guidance:** **Depends on: Task 7.1.2 Output by Agent_Backend_Async**
+- Add `worker` service to `docker-compose.yml`.
+- Reuse the `backend` build context/image.
+- Set command to `celery -A app.core.celery_app worker --loglevel=info`.
+- Ensure it `depends_on` both `db` and `redis`.
 
-### Task 2.3 – JWT Authentication & Security Logic - Agent_Backend_Core
-**Objective:** Implement secure user authentication.
-**Output:** Security utilities and FastAPI dependencies.
-**Guidance:** **Depends on: Task 1.4 Output**
-- Implement password hashing using passlib (bcrypt).
-- Create JWT token generation (access/refresh) and validation logic.
-- Implement a 'get_current_user' dependency to protect API routes.
+### Task 7.1.4 – Base Task & Robust Retry Logic - Agent_Backend_Async
+**Objective:** Implement a resilient base configuration for tasks to handle API failures (429s).
+**Output:** Configuration update in `celery_app.py` or new `app/tasks/base.py`.
+**Guidance:** **Depends on: Task 7.1.2 Output**
+1. Define a default retry strategy: `default_retry_delay=60`, `max_retries=3`, `retry_backoff=True`.
+2. Configure Celery to handle specific exceptions (e.g., RequestException) automatically if possible, or document how tasks should invoke `self.retry`.
 
-### Task 2.4 – User Registration & Login API - Agent_Backend_Core
-**Objective:** Provide endpoints for user onboarding and access.
-**Output:** /auth/register and /auth/login endpoints.
-**Guidance:** **Depends on: Task 2.2 Output, Task 2.3 Output**
-1. Create Pydantic schemas for auth requests and responses.
-2. Implement registration logic (default plan='growth', trial_start_date=now(), is_verified=True).
-3. Implement login login verifying credentials and returning JWT.
-4. Add error handling for duplicate emails or invalid credentials.
+## Phase 7B: Scraping & Data Acquisition
 
-### Task 2.5 – Auth UI & Protected Routes - Agent_Frontend_Core
-**Objective:** Create the user interface for authentication.
-**Output:** Login/Register pages and auth protection logic.
-**Guidance:** **Depends on: Task 2.4 Output by Agent_Backend_Core**
-1. Build Register and Login forms with validation and Tailwind styling.
-2. Implement client-side auth state management (localStorage/Cookies).
-3. Create a ProtectedRoute component to shield dashboard pages.
-4. Add basic feedback (toasts) for login success/failure.
+### Task 7.2.1 – Apify Service Client - Agent_Scraping
+**Objective:** Implement the core service to interact with the Apify API.
+**Output:** `backend/app/services/apify_client.py` and `requirements.txt` update.
+**Guidance:**
+- Add `apify-client` to requirements.
+- Create `ApifyService` class initialized with `APIFY_API_TOKEN`.
+- Implement a generic `run_actor(actor_id, run_input)` method that waits for completion and returns the dataset items.
 
-## Phase 3: Core Business Logic & Data Mocks
+### Task 7.2.2 – Google Maps Connector - Agent_Scraping
+**Objective:** Implement specific logic to scrape Google Maps data (Reviews, Details).
+**Output:** Method `scrape_google_maps` in `ApifyService`.
+**Guidance:** **Depends on: Task 7.2.1 Output**
+1. Use a standard actor (e.g., `compass/google-maps-scraper` or similar free tier compatible).
+2. Construct input JSON: `searchStrings` based on Competitor Name + Location.
+3. Fetch results including `reviews`, `totalScore`, `address`.
 
-### Task 3.1 – Data Seeder Script (Fixtures) - Agent_Data_IA
-**Objective:** Populate the database with test data for development and demos.
-**Output:** backend/app/db/seed.py script.
-**Guidance:** **Depends on: Task 2.2 Output by Agent_Backend_Core**
-- Create users for Starter, Growth, and Ultimate plans.
-- Generate mock competitors and historical events for each user.
-- Include diverse event types and scores to test filtering logic.
+### Task 7.2.3 – Data Normalization Logic - Agent_Scraping
+**Objective:** Transform raw Apify JSON into Vigilux internal schemas.
+**Output:** `app/services/normalization.py`.
+**Guidance:** **Depends on: Task 7.2.2 Output**
+- Create functions to map external fields to `Competitor` model updates (e.g., address, rating).
+- Extract reviews into a structure ready for AI analysis (List of text strings).
+- Handle missing data gracefully.
 
-### Task 3.2 – Tier & Quota Management Logic - Agent_Backend_Core
-**Objective:** Enforce plan-based restrictions and trial logic.
-**Output:** Quota service and route dependencies.
-**Guidance:** **Depends on: Task 2.4 Output**
-- Define Pricing Constants: Starter (0€), Growth (49€), Ultimate (199€).
-- Implement `get_effective_plan(user)`: returns 'starter' if Growth trial (>7 days) expired and unpaid.
-- Define constants for competitor limits (3, 15, 50).
-- Implement logic to block adding competitors beyond the limit.
+### Task 7.2.4 – Async Scraping Task - Agent_Backend_Async
+**Objective:** Create the Celery task that triggers the scraping process.
+**Output:** `backend/app/tasks/scraping.py`.
+**Guidance:** **Depends on: Task 7.1.4 Output, Task 7.2.1 Output by Agent_Scraping**
+- Implement `scrape_competitor_task(competitor_id)`.
+- Retrieve competitor from DB.
+- Call `ApifyService`.
+- On success, update Competitor status and trigger the AI Analysis task (chaining).
+- Use the base task's retry logic for network errors.
 
-### Task 3.3 – Mock IA Scoring Engine - Agent_Backend_Business
-**Objective:** Simulate AI-driven analysis of market changes.
-**Output:** Scoring service module.
-**Guidance:** **Depends on: Task 1.4 Output by Agent_Backend_Core**
-- Implement a mock scoring function (1-10) for competitor events.
-- Flag events with Score > 7 as "Breakthrough Signals".
-- Categorize events (Price, Feature, Health, Entry).
+## Phase 7C: AI Analysis & Insight Generation
 
-### Task 3.4 – Competitor Tracking & Radar API - Agent_Backend_Business
-**Objective:** Provide endpoints for managing competitors and market discovery.
-**Output:** /competitors and /radar endpoints.
-**Guidance:** **Depends on: Task 3.2 Output by Agent_Backend_Core, Task 3.3 Output**
-1. Implement CRUD for competitors (Add, List, Archive, Delete).
-2. Implement 'Radar' search endpoint returning mock market data.
-3. Ensure 'Archive' status stops active tracking logic simulation.
-4. Add filters for Score, Status, and Date.
+### Task 7.3.1 – Gemini Service Wrapper - Agent_Intelligence
+**Objective:** Implement the service to interact with Google's Generative AI.
+**Output:** `backend/app/services/gemini.py`.
+**Guidance:**
+- Add `google-generativeai` to requirements.
+- Initialize model (e.g., `gemini-pro`) with `GEMINI_API_KEY`.
+- Implement `generate_insight(text_data)` method.
 
-### Task 3.5 – Dashboard Statistics API - Agent_Backend_Business
-**Objective:** Aggregate data for the frontend dashboard.
-**Output:** /dashboard/stats endpoint.
-**Guidance:** **Depends on: Task 2.2 Output by Agent_Backend_Core**
-- Calculate summary stats (Total active, breakthroughs today, average threat).
-- Group events by day for timeline charts.
-- Return structured JSON compatible with frontend chart libraries.
+### Task 7.3.2 – Prompt Engineering & Parsing - Agent_Intelligence
+**Objective:** Design the prompt to extract structured intelligence from raw text.
+**Output:** Prompt templates and Pydantic parsers.
+**Guidance:** **Depends on: Task 7.3.1 Output**
+- Create a prompt that asks for: SWOT Analysis, Sentinel Score (0-100), and Key Events.
+- Enforce JSON output format for machine parsing.
+- Implement a validator to ensure the AI response matches the expected schema.
 
-## Phase 4: Dashboard & UI Implementation
+### Task 7.3.3 – Async Analysis Task - Agent_Backend_Async
+**Objective:** Create the Celery task that processes scraping results with AI.
+**Output:** `backend/app/tasks/analysis.py`.
+**Guidance:** **Depends on: Task 7.3.1 Output by Agent_Intelligence, Task 7.1.4 Output**
+- Implement `analyze_competitor_task(competitor_id, raw_data)`.
+- Call `GeminiService.generate_insight`.
+- Use the base task's retry logic for Rate Limit errors (429).
 
-### Task 4.1 – Layout & Navigation Shell - Agent_Frontend_Core
-**Objective:** Build the application's core frame.
-**Output:** MainLayout, Sidebar, and Header components.
-**Guidance:** **Depends on: Task 1.5 Output**
-1. Implement Dark/Light mode toggle using next-themes.
-2. Create a responsive Sidebar with navigation links.
-3. Build the Header showing current project and user profile.
-4. Set up the MainLayout wrapper with responsive constraints.
+### Task 7.3.4 – Insight Persistence Logic - Agent_Backend_Async
+**Objective:** Save the AI-generated insights into the database.
+**Output:** DB persistence logic within the Analysis Task.
+**Guidance:** **Depends on: Task 7.3.3 Output**
+- Update `Competitor.score` and `Competitor.last_updated`.
+- Create new `Event` records for each key event identified by Gemini.
+- Trigger a notification dispatch (optional stub for now).
 
-### Task 4.2 – Dashboard Overview Page - Agent_Frontend_App
-**Objective:** Create the main stats and visualization page.
-**Output:** Dashboard page with charts and cards.
-**Guidance:** **Depends on: Task 4.1 Output by Agent_Frontend_Core, Task 3.5 Output by Agent_Backend_Business**
-1. Build reusable StatCard components.
-2. Integrate Recharts to display the 'Threat Timeline'.
-3. Fetch and display data from the /dashboard/stats endpoint.
+## Phase 7D: Scheduling & Tiered Logic Orchestration
 
-### Task 4.3 – Competitor List & Timeline View - Agent_Frontend_App
-**Objective:** Visualize followed competitors and their activity.
-**Output:** Competitors page and Timeline component.
-**Guidance:** **Depends on: Task 4.1 Output by Agent_Frontend_Core, Task 3.4 Output by Agent_Backend_Business**
-1. Create a filterable table/grid for competitors.
-2. Build a vertical Timeline component for events.
-3. Highlight 'Breakthrough Signals' (Score > 7) with distinct styling.
+### Task 7.4.1 – Manual Refresh API - Agent_Backend_Async
+**Objective:** Allow users to trigger scans manually, respecting plan limits.
+**Output:** Endpoint `POST /api/v1/competitors/{id}/refresh`.
+**Guidance:** **Depends on: Task 7.2.4 Output, Task 3.2 (Quota Logic)**
+- Implement endpoint to check if user has credits (Starter) or rate limit.
+- If allowed, trigger `scrape_competitor_task.delay(id)`.
+- Return `{"task_id": "...", "status": "pending"}`.
 
-### Task 4.4 – Quick View Modal & Details - Agent_Frontend_App
-**Objective:** Allow rapid inspection of competitor details.
-**Output:** QuickViewModal component.
-**Guidance:** **Depends on: Task 4.3 Output, Task 3.4 Output by Agent_Backend_Business**
-- Create a modal triggered by clicking a competitor.
-- Implement lazy-loading for detailed competitor data.
-- Display mock insights: Pitch, CA estimate, Strengths/Weaknesses.
+### Task 7.4.2 – Celery Beat Service - Agent_DevOps
+**Objective:** Add the scheduler service to the Docker stack.
+**Output:** Updated `docker-compose.yml`.
+**Guidance:** **Depends on: Task 7.1.3 Output**
+- Add `beat` service using the same backend image.
+- Command: `celery -A app.core.celery_app beat -l info`.
+- Ensure it shares the `redis` network.
 
-### Task 4.5 – Global Radar & Discovery UI - Agent_Frontend_App
-**Objective:** UI for market-wide competitive search.
-**Output:** Radar page.
-**Guidance:** **Depends on: Task 4.1 Output by Agent_Frontend_Core, Task 3.4 Output by Agent_Backend_Business**
-1. Create a search interface to trigger the Radar scan.
-2. Display results with 'Score de Menace' and action to 'Add to Dashboard'.
-3. Implement 'Blurred/Locked' state for Radar results if user is on effective Starter plan.
-4. Implement UI blocks/CTAs for upgrade (Growth 49€/Ultimate 199€) on locked items.
-
-## Phase 5: Notifications & Integrations
-
-### Task 5.1 – Notification Preferences API - Agent_Backend_Business
-**Objective:** Manage user notification settings.
-**Output:** /users/me/notifications endpoint.
-**Guidance:** **Depends on: Task 2.4 Output by Agent_Backend_Core**
-1. Create 'notification_settings' table (user_id, channel, min_score, enabled).
-2. Implement GET and PATCH endpoints for preferences.
-3. Initialize default settings on user registration.
-
-### Task 5.2 – Notification Dispatcher Service - Agent_Backend_Business
-**Objective:** Centralize notification logic.
-**Output:** Notification dispatcher module.
-**Guidance:** **Depends on: Task 5.1 Output**
-- Implement logic to check event score against user threshold.
-- Route notifications to enabled channels (Email, Slack, etc.).
-- Simulate dispatch via console logging for the prototype.
-
-### Task 5.3 – Multi-Channel Integration (Mock) - Agent_Backend_Business
-**Objective:** Implement external communication logic.
-**Output:** Slack/Discord/Email provider stubs.
-**Guidance:** **Depends on: Task 5.2 Output**
-- Implement mock Slack/Discord webhook callers.
-- Implement mock Email sender (console log).
-- Ensure Ultimate-only channels (WhatsApp/SMS) are restricted.
-
-### Task 5.4 – Notification Settings UI - Agent_Frontend_Core
-**Objective:** Interface for configuring alerts.
-**Output:** Settings/Notifications page.
-**Guidance:** **Depends on: Task 4.1 Output, Task 5.1 Output by Agent_Backend_Business**
-1. Build toggle switches for each notification channel.
-2. Implement inputs for Webhook URLs and phone numbers.
-3. Add a score threshold selector (Slider or Select).
-
-## Phase 6: QA & Finalization
-
-### Task 6.1 – Backend Testing & Coverage - Agent_Backend_Core
-**Objective:** Ensure backend reliability and performance.
-**Output:** Pytest suite with coverage reports.
-**Guidance:** **Depends on: Task 3.4 Output by Agent_Backend_Business**
-1. Set up Pytest, Coverage.py, and FactoryBoy.
-2. Write unit tests for core services (Auth, Quotas, Scoring).
-3. Implement integration tests for critical API endpoints.
-4. Target > 75% code coverage.
-
-### Task 6.2 – Frontend Testing & Coverage - Agent_Frontend_Core
-**Objective:** Ensure UI stability and correct state handling.
-**Output:** Vitest/Jest suite.
-**Guidance:** **Depends on: Task 4.3 Output by Agent_Frontend_App, Task 5.4 Output**
-1. Set up Vitest and React Testing Library.
-2. Write unit tests for reusable UI components.
-3. Implement integration tests for the authentication and settings flows.
-
-### Task 6.3 – E2E Scenario Implementation - Agent_DevOps
-**Objective:** Validate full user journeys across all plans.
-**Output:** Playwright test suite.
-**Guidance:** **Depends on: Task 6.1 Output by Agent_Backend_Core, Task 6.2 Output by Agent_Frontend_Core**
-1. Initialize Playwright in the monorepo root.
-2. Script 2 scenarios per profile (Starter/Growth/Ultimate) covering Onboarding, Dashboard, and Radar.
-3. Verify plan restrictions (locked features/quotas) are enforced in the UI.
-
-### Task 6.4 – Technical Documentation & Installation - Agent_DevOps
-**Objective:** Facilitate project handoff and deployment.
-**Output:** README.md and /docs directory.
-**Guidance:** **Depends on: Task 1.1 Output**
-- Write a detailed README.md with Docker Compose instructions.
-- Document API endpoints (via Swagger/OpenAPI).
-- Add an architecture overview and troubleshooting guide in /docs.
-
-### Task 6.5 – Final Polish & Demo Prep - Agent_DevOps
-**Objective:** Ensure the prototype is production-ready and demo-capable.
-**Output:** Cleaned-up repository and demo fixtures.
-**Guidance:** **Depends on: Phase 5 Output by various agents**
-- Perform a final linting/formatting sweep.
-- Verify that seeding scripts create a visually compelling demo state.
-- Conduct a final manual walkthrough of all user journeys.
+### Task 7.4.3 – Tiered Scheduler Implementation - Agent_Backend_Async
+**Objective:** Implement the logic to automatically scan competitors based on User Plan.
+**Output:** Scheduled task in `celery_app.py` or `tasks/scheduler.py`.
+**Guidance:** **Depends on: Task 7.4.2 Output by Agent_DevOps**
+1. Configure a periodic task running e.g., every hour or day.
+2. Logic:
+   - Find all **Ultimate** users -> Scan their competitors if last_update > 24h.
+   - Find all **Growth** users -> Scan if last_update > 7 days.
+   - **Starter** users -> Do not auto-scan.
