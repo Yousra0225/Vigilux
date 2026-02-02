@@ -1,7 +1,9 @@
 import logging
-from typing import Optional
+from typing import Optional, Dict, Any
 
 from app.core.config import settings
+from app.services.intelligence_prompts import IntelligencePrompts
+from app.schemas.intelligence import IntelligenceReport, safe_parse_intelligence_response
 
 logger = logging.getLogger(__name__)
 
@@ -142,3 +144,117 @@ class GeminiService:
     def is_configured() -> bool:
         """Check if Gemini is properly configured with an API key."""
         return bool(settings.GEMINI_API_KEY)
+
+    @staticmethod
+    def analyze_competitor_intelligence(
+        competitor_name: str,
+        raw_data: str,
+        additional_context: Optional[Dict[str, Any]] = None
+    ) -> Optional[IntelligenceReport]:
+        """
+        Generate structured competitive intelligence from raw data.
+
+        Uses prompt templates to extract SWOT analysis, threat scoring,
+        and key events from competitor data.
+
+        Args:
+            competitor_name: Name of the competitor
+            raw_data: Raw text data (reviews, descriptions, scraped content)
+            additional_context: Optional dict with url, location, categories, etc.
+
+        Returns:
+            IntelligenceReport with structured analysis, or None if generation fails
+        """
+        if not raw_data or not raw_data.strip():
+            logger.warning("Empty raw_data provided to analyze_competitor_intelligence")
+            return None
+
+        model = GeminiService._get_model()
+        if not model:
+            logger.info("Gemini model not available - would return None")
+            return None
+
+        try:
+            # Build the structured prompt
+            prompt = IntelligencePrompts.build_analysis_prompt(
+                competitor_name=competitor_name,
+                raw_data=raw_data,
+                additional_context=additional_context
+            )
+
+            logger.info(f"Analyzing intelligence for {competitor_name}")
+
+            # Truncate input if too long
+            max_input_length = 100000
+            if len(prompt) > max_input_length:
+                prompt = prompt[:max_input_length]
+                logger.debug(f"Truncated prompt to {max_input_length} characters")
+
+            # Generate the response
+            response = model.generate_content(prompt)
+
+            if not response.parts:
+                logger.warning("Gemini returned empty response for intelligence analysis")
+                return None
+
+            raw_response = response.text
+            logger.info(f"Received AI response: {len(raw_response)} characters")
+
+            # Parse the JSON response into IntelligenceReport
+            report, parse_error = safe_parse_intelligence_response(raw_response)
+
+            if parse_error:
+                logger.error(f"Failed to parse intelligence response: {parse_error.error_message}")
+                logger.debug(f"Raw response: {raw_response[:500]}")
+                return None
+
+            logger.info(
+                f"Successfully generated intelligence report: "
+                f"score={report.sentinel_score}, "
+                f"sentiment={report.market_sentiment}, "
+                f"events={len(report.key_events)}"
+            )
+            return report
+
+        except Exception as e:
+            logger.error(f"Competitor intelligence analysis failed: {e}")
+            return None
+
+    @staticmethod
+    def analyze_from_scraped_data(
+        name: str,
+        description: str,
+        reviews: Optional[list[str]] = None,
+        **kwargs
+    ) -> Optional[IntelligenceReport]:
+        """
+        Analyze competitor from structured scraped data.
+
+        Convenience method that builds prompt from structured data
+        and returns structured intelligence report.
+
+        Args:
+            name: Competitor name
+            description: Business description
+            reviews: List of review strings
+            **kwargs: Additional context (url, location, categories, etc.)
+
+        Returns:
+            IntelligenceReport with structured analysis, or None if generation fails
+        """
+        from app.services.intelligence_prompts import PromptBuilder
+
+        # Build raw data string
+        raw_parts = [f"Description: {description}"]
+
+        if reviews:
+            raw_parts.append("\nReviews:")
+            raw_parts.extend(f"- {r}" for r in reviews[:20])
+
+        raw_data = "\n".join(raw_parts)
+
+        return GeminiService.analyze_competitor_intelligence(
+            competitor_name=name,
+            raw_data=raw_data,
+            additional_context=kwargs
+        )
