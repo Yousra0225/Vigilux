@@ -9,6 +9,45 @@ on:
 jobs:
   backend-test:
     runs-on: ubuntu-latest
+    services:
+      # Service Postgres temporaire pour les tests
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: vigilux_test
+          POSTGRES_PASSWORD: vigilux_test_password
+          POSTGRES_DB: vigilux_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      # Service Redis temporaire pour les tests
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # Configuration pour les services de test CI
+      DATABASE_URL: postgresql://vigilux_test:vigilux_test_password@localhost:5432/vigilux_test
+      REDIS_URL: redis://localhost:6379/0
+      # Secrets injectés depuis GitHub
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      APIFY_API_TOKEN: ${{ secrets.APIFY_API_TOKEN }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      # Variables par défaut
+      PROJECT_NAME: Vigilux_CI
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
+
     steps:
       - uses: actions/checkout@v4
       
@@ -27,7 +66,12 @@ jobs:
         working-directory: ./backend
         run: |
           ruff check .
-          
+      
+      # (Optionnel) Si vous voulez formater le code check
+      # - name: Check formatting
+      #   working-directory: ./backend
+      #   run: ruff format --check .
+
       - name: Run Tests
         working-directory: ./backend
         run: |
@@ -52,3 +96,8 @@ jobs:
       - name: Lint
         working-directory: ./frontend
         run: npm run lint
+        
+      # (Optionnel) Ajouter les tests frontend plus tard
+      # - name: Run Unit Tests
+      #   working-directory: ./frontend
+      #   run: npm run test
