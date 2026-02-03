@@ -12,6 +12,7 @@ from app.models.project import Project
 from app.tasks.base import ScanningTask
 from app.services.apify_client import apify_service
 from app.services.normalization import normalization_service
+from app.services.websocket_manager import notify_user
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +75,27 @@ def scrape_competitor_task(
                 "message": "Competitor not found"
             }
 
+        # Fetch project to get user_id for notifications
+        project = session.get(Project, competitor.project_id)
+        user_id = project.user_id if project else None
+
         logger.info(f"Scraping data for: {competitor.name}")
+
+        # Emit: Scraping started
+        if user_id:
+            try:
+                notify_user(
+                    user_id=user_id,
+                    notification_type="TASK_UPDATE",
+                    data={
+                        "status": "scraping_started",
+                        "competitor_id": competitor_id,
+                        "competitor_name": competitor.name,
+                        "timestamp": datetime.utcnow().isoformat()
+                    }
+                )
+            except Exception as e:
+                logger.warning(f"Failed to send scraping started notification: {e}")
 
         # Step 1: Scrape Google Maps for competitor data
         try:
@@ -85,6 +106,22 @@ def scrape_competitor_task(
 
             if not raw_results:
                 logger.warning(f"No Google Maps results found for {competitor.name}")
+                # Emit: Scraping complete but no data
+                if user_id:
+                    try:
+                        notify_user(
+                            user_id=user_id,
+                            notification_type="TASK_UPDATE",
+                            data={
+                                "status": "scraping_complete_no_data",
+                                "competitor_id": competitor_id,
+                                "competitor_name": competitor.name,
+                                "message": "No Google Maps data found",
+                                "timestamp": datetime.utcnow().isoformat()
+                            }
+                        )
+                    except Exception as e:
+                        logger.warning(f"Failed to send scraping notification: {e}")
                 return {
                     "success": True,
                     "competitor_id": competitor_id,
@@ -96,6 +133,22 @@ def scrape_competitor_task(
 
         except Exception as e:
             logger.error(f"Google Maps scraping failed for {competitor.name}: {e}")
+            # Emit: Scraping failed
+            if user_id:
+                try:
+                    notify_user(
+                        user_id=user_id,
+                        notification_type="TASK_UPDATE",
+                        data={
+                            "status": "scraping_failed",
+                            "competitor_id": competitor_id,
+                            "competitor_name": competitor.name,
+                            "error": str(e),
+                            "timestamp": datetime.utcnow().isoformat()
+                        }
+                    )
+                except Exception as notify_error:
+                    logger.warning(f"Failed to send scraping failed notification: {notify_error}")
             # Return without raising - ScanningTask will handle retries for HTTP exceptions
             return {
                 "success": False,
@@ -120,6 +173,22 @@ def scrape_competitor_task(
 
         except Exception as e:
             logger.error(f"Normalization failed for {competitor.name}: {e}")
+            # Emit: Normalization failed
+            if user_id:
+                try:
+                    notify_user(
+                        user_id=user_id,
+                        notification_type="TASK_UPDATE",
+                        data={
+                            "status": "scraping_failed",
+                            "competitor_id": competitor_id,
+                            "competitor_name": competitor.name,
+                            "error": f"Normalization failed: {str(e)}",
+                            "timestamp": datetime.utcnow().isoformat()
+                        }
+                    )
+                except Exception as notify_error:
+                    logger.warning(f"Failed to send scraping failed notification: {notify_error}")
             return {
                 "success": False,
                 "competitor_id": competitor_id,
@@ -152,6 +221,22 @@ def scrape_competitor_task(
 
         except Exception as e:
             logger.error(f"Failed to update competitor {competitor_id}: {e}")
+            # Emit: Database update failed
+            if user_id:
+                try:
+                    notify_user(
+                        user_id=user_id,
+                        notification_type="TASK_UPDATE",
+                        data={
+                            "status": "scraping_failed",
+                            "competitor_id": competitor_id,
+                            "competitor_name": competitor.name,
+                            "error": f"Database update failed: {str(e)}",
+                            "timestamp": datetime.utcnow().isoformat()
+                        }
+                    )
+                except Exception as notify_error:
+                    logger.warning(f"Failed to send scraping failed notification: {notify_error}")
             session.rollback()
             return {
                 "success": False,
@@ -173,6 +258,24 @@ def scrape_competitor_task(
             # Don't fail the scrape task if analysis trigger fails
 
     # Return success result
+    # Emit: Scraping complete successfully
+    if user_id:
+        try:
+            notify_user(
+                user_id=user_id,
+                notification_type="TASK_UPDATE",
+                data={
+                    "status": "scraping_complete",
+                    "competitor_id": competitor_id,
+                    "competitor_name": normalized_data.get("name", competitor.name),
+                    "score": normalized_data.get("score"),
+                    "reviews_count": len(normalized_data.get("reviews", [])),
+                    "timestamp": datetime.utcnow().isoformat()
+                }
+            )
+        except Exception as e:
+            logger.warning(f"Failed to send scraping complete notification: {e}")
+
     result = {
         "success": True,
         "competitor_id": competitor_id,

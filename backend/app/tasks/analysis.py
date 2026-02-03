@@ -9,9 +9,11 @@ from app.core.celery_app import celery_app
 from app.core.db import get_session
 from app.models.competitor import Competitor
 from app.models.event import Event, EventType
+from app.models.project import Project
 from app.schemas.intelligence import IntelligenceReport, KeyEvent
 from app.tasks.base import AnalysisTask
 from app.services.gemini import GeminiService
+from app.services.websocket_manager import notify_user
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +55,26 @@ def analyze_competitor_task(
             logger.warning(f"Competitor {competitor_id} not found")
             return {"success": False, "message": "Competitor not found"}
 
+        # Fetch project to get user_id for notifications
+        project = session.get(Project, competitor.project_id)
+        user_id = project.user_id if project else None
+
+        # Emit: Analysis started
+        if user_id:
+            try:
+                notify_user(
+                    user_id=user_id,
+                    notification_type="TASK_UPDATE",
+                    data={
+                        "status": "analysis_started",
+                        "competitor_id": competitor_id,
+                        "competitor_name": competitor.name,
+                        "timestamp": datetime.utcnow().isoformat()
+                    }
+                )
+            except Exception as e:
+                logger.warning(f"Failed to send analysis started notification: {e}")
+
         # Extract context for analysis
         # raw_data comes from the normalization service
         name = raw_data.get("name") or competitor.name
@@ -79,6 +101,22 @@ def analyze_competitor_task(
 
             if not report:
                 logger.warning(f"Analysis yielded no report for {competitor.name}")
+                # Emit: Analysis failed (no result)
+                if user_id:
+                    try:
+                        notify_user(
+                            user_id=user_id,
+                            notification_type="TASK_UPDATE",
+                            data={
+                                "status": "analysis_failed",
+                                "competitor_id": competitor_id,
+                                "competitor_name": competitor.name,
+                                "error": "AI analysis returned no result",
+                                "timestamp": datetime.utcnow().isoformat()
+                            }
+                        )
+                    except Exception as e:
+                        logger.warning(f"Failed to send analysis failed notification: {e}")
                 return {
                     "success": False,
                     "competitor_id": competitor_id,
@@ -134,6 +172,25 @@ def analyze_competitor_task(
             # To be implemented: integrate with notification service
             _notify_users_of_insights(competitor_id=str(competitor.id), events=events_created)
 
+            # Emit: Analysis complete successfully
+            if user_id:
+                try:
+                    notify_user(
+                        user_id=user_id,
+                        notification_type="TASK_UPDATE",
+                        data={
+                            "status": "analysis_complete",
+                            "competitor_id": competitor_id,
+                            "competitor_name": competitor.name,
+                            "new_score": report.sentinel_score,
+                            "events_created": len(events_created),
+                            "market_sentiment": report.market_sentiment.value if hasattr(report.market_sentiment, 'value') else str(report.market_sentiment),
+                            "timestamp": datetime.utcnow().isoformat()
+                        }
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to send analysis complete notification: {e}")
+
             return {
                 "success": True,
                 "competitor_id": competitor_id,
@@ -144,6 +201,22 @@ def analyze_competitor_task(
 
         except Exception as e:
             logger.error(f"AI Analysis failed for {competitor.name}: {e}")
+            # Emit: Analysis failed
+            if user_id:
+                try:
+                    notify_user(
+                        user_id=user_id,
+                        notification_type="TASK_UPDATE",
+                        data={
+                            "status": "analysis_failed",
+                            "competitor_id": competitor_id,
+                            "competitor_name": competitor.name,
+                            "error": str(e),
+                            "timestamp": datetime.utcnow().isoformat()
+                        }
+                    )
+                except Exception as notify_error:
+                    logger.warning(f"Failed to send analysis failed notification: {notify_error}")
             # AnalysisTask will handle retries according to policy
             raise e
 
