@@ -11,7 +11,8 @@ from app.models.competitor import Competitor, TrackingStatus
 from app.models.project import Project
 from app.models.user import User, PlanType
 from app.tasks.base import BaseTask
-from app.tasks.scraping import scrape_competitor_task
+# Lazy import to avoid circular dependency
+# from app.tasks.scraping import scrape_competitor_task
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,9 @@ def run_tiered_scheduler(self) -> Dict[str, Any]:
         Dictionary with summary of triggered tasks
     """
     logger.info("Running tiered scheduler - checking for competitors to scan")
+
+    # Import inside function to avoid circular dependency
+    from app.tasks.scraping import scrape_competitor_task
 
     triggered_count = 0
     skipped_count = 0
@@ -143,6 +147,9 @@ def trigger_project_scan(self, project_id: str) -> Dict[str, Any]:
         Dictionary with results summary
     """
     logger.info(f"Triggering project-wide scan for: {project_id}")
+
+    # Import inside function to avoid circular dependency
+    from app.tasks.scraping import scrape_competitor_task
 
     try:
         proj_id = uuid.UUID(project_id)
