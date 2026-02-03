@@ -3,14 +3,12 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict
 
-from sqlmodel import Session, select
 
 from app.core.celery_app import celery_app
 from app.core.db import get_session
 from app.models.competitor import Competitor
 from app.models.event import Event, EventType
 from app.models.project import Project
-from app.schemas.intelligence import IntelligenceReport, KeyEvent
 from app.tasks.base import AnalysisTask
 from app.services.gemini import GeminiService
 from app.services.websocket_manager import notify_user

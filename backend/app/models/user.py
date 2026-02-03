@@ -10,7 +10,6 @@ if TYPE_CHECKING:
     from .notification_setting import NotificationSetting
 
 import sqlalchemy as sa
-from sqlalchemy import Column, Enum as SAEnum
 
 class PlanType(str, Enum):
     STARTER = "starter"

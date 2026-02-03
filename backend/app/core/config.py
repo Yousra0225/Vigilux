@@ -1,5 +1,5 @@
 from typing import List, Union, Optional
-from pydantic import AnyHttpUrl, validator, PostgresDsn
+from pydantic import AnyHttpUrl, validator
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):

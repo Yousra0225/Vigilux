@@ -242,7 +242,6 @@ class GeminiService:
         Returns:
             IntelligenceReport with structured analysis, or None if generation fails
         """
-        from app.services.intelligence_prompts import PromptBuilder
 
         # Build raw data string
         raw_parts = [f"Description: {description}"]

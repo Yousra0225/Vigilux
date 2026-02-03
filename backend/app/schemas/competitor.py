@@ -1,6 +1,6 @@
 import uuid
 from typing import Optional, List
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
 from app.models.competitor import TrackingStatus
 
 class CompetitorBase(BaseModel):

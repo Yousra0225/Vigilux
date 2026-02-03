@@ -1,5 +1,5 @@
-from .user import User, PlanType
-from .project import Project
-from .competitor import Competitor, TrackingStatus
-from .event import Event, EventType
-from .notification_setting import NotificationSetting, NotificationChannel
+from .user import User, PlanType  # noqa: F401
+from .project import Project  # noqa: F401
+from .competitor import Competitor, TrackingStatus  # noqa: F401
+from .event import Event, EventType  # noqa: F401
+from .notification_setting import NotificationSetting, NotificationChannel  # noqa: F401

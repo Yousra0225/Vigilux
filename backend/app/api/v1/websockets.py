@@ -36,7 +36,7 @@ async def get_user_from_token(token: str) -> User | None:
             return None
 
         # Import here to avoid circular dependency
-        from sqlmodel import Session, select
+        from sqlmodel import select
         from app.core.db import get_session
         from app.models.user import User
 

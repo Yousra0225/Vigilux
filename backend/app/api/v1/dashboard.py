@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from typing import Any, Annotated
 
 from fastapi import APIRouter, Depends
-from sqlmodel import Session, select, func, cast, Date
+from sqlmodel import Session, select, func
 
 from app.api.deps import get_current_user, get_session
 from app.models.user import User

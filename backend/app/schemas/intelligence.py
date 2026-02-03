@@ -169,7 +169,7 @@ def parse_intelligence_response(ai_response: str) -> IntelligenceReport:
 
     try:
         data = json.loads(cleaned)
-    except json.JSONDecodeError as e:
+    except json.JSONDecodeError:
         # Try to fix common JSON issues
         # Remove trailing commas
         cleaned = re.sub(r',\s*([}\]])', r'\1', cleaned)

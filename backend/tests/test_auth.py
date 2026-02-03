@@ -1,4 +1,3 @@
-import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 from app.models.user import User

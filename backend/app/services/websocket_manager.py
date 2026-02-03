@@ -1,7 +1,7 @@
 import json
 import logging
 import uuid
-from typing import Dict, Set, Optional, Any
+from typing import Dict, Optional, Any
 from fastapi import WebSocket
 
 import redis

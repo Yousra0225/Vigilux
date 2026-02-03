@@ -1,4 +1,3 @@
-import pytest
 from datetime import datetime, timedelta
 from app.services.quota import QuotaService
 from app.services.scoring import ScoringService

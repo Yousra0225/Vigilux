@@ -29,7 +29,7 @@ def calculate_competitor_score(self, competitor_id: str) -> Optional[dict]:
         Dictionary with score details or None if competitor not found
     """
     import uuid
-    from sqlmodel import Session, select
+    from sqlmodel import select
     from app.core.db import get_session
     from app.models.competitor import Competitor
     from app.models.event import Event
@@ -114,7 +114,7 @@ def score_all_competitors(self, project_id: str) -> dict:
         Dictionary with results summary
     """
     import uuid
-    from sqlmodel import Session, select
+    from sqlmodel import select
     from app.core.db import get_session
     from app.models.competitor import Competitor
     from app.models.project import Project
@@ -186,7 +186,6 @@ def process_event_and_score(
         Dictionary with event details and updated competitor score
     """
     import uuid
-    from sqlmodel import Session, select
     from app.core.db import get_session
     from app.models.competitor import Competitor
     from app.models.event import Event, EventType

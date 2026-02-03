@@ -1,9 +1,10 @@
-import random
 import logging
+import random
+import uuid
 from typing import List
+
 from celery import shared_task
 
-from app.schemas.competitor import RadarResult
 from app.services.apify import ApifyService
 
 logger = logging.getLogger(__name__)
@@ -154,11 +155,9 @@ def add_competitors_from_scan(
     Returns:
         Dictionary with success status and added competitor IDs
     """
-    from sqlmodel import Session, select
     from app.core.db import get_session
     from app.models.competitor import Competitor
     from app.models.project import Project
-    import uuid6
 
     logger.info(f"Adding {len(scan_results)} competitors to project {project_id}")
 

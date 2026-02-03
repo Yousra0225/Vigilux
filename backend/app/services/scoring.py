@@ -1,5 +1,5 @@
 import random
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 from app.models.event import Event, EventType
 

@@ -1,6 +1,5 @@
 import uuid
 from typing import List, Any, Annotated, Optional
-from datetime import datetime
 import random
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -13,10 +12,8 @@ from app.models.competitor import Competitor
 from app.models.project import Project
 from app.schemas.competitor import CompetitorCreate, CompetitorRead, CompetitorUpdate, RadarResult, CompetitorDetail
 from app.services.quota import QuotaService
-from app.services.scoring import ScoringService
-from app.models.event import EventType, Event
+from app.models.event import Event
 from app.tasks.radar import perform_market_scan
-from app.tasks.scoring import calculate_competitor_score
 from app.tasks.scraping import scrape_competitor_task
 
 router = APIRouter()

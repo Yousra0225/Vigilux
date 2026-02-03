@@ -1,4 +1,3 @@
-from collections.abc import AsyncGenerator
 from sqlmodel import SQLModel, create_engine, Session
 
 from app.core.config import settings

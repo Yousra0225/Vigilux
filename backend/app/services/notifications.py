@@ -1,6 +1,5 @@
 import logging
 import json
-import httpx
 from typing import List, Optional
 from sqlmodel import Session, select
 

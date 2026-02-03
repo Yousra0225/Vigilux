@@ -1,5 +1,4 @@
 from typing import List, Any, Annotated
-import uuid
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
 from app.api.deps import get_current_user, get_session

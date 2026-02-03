@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Any, Dict
 
-from sqlmodel import Session, select
+from sqlmodel import select
 
 from app.core.celery_app import celery_app
 from app.core.db import get_session

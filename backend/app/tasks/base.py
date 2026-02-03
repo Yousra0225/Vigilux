@@ -1,7 +1,5 @@
 import logging
 from celery import Task
-from celery.exceptions import Retry
-from app.core.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 
