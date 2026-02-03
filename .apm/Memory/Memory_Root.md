@@ -63,10 +63,18 @@
     *   [.apm/Memory/Phase_06_QA_Finalization/Debug_8_1_Backend_Fix.md](.apm/Memory/Phase_06_QA_Finalization/Debug_8_1_Backend_Fix.md) (Stabilisation critique Backend/Auth)
 
 ## Phase 07 – Real Engines Summary
-*   **Outcome:** Infrastructure for async tasks and scraping established. Configured Redis, initialized Celery app and worker, and implemented robust base retry logic for resilient task execution.
-*   **Involved Agents:** Agent_DevOps, Agent_Backend_Async.
+*   **Outcome:** Fully implemented the "Real Engines" intelligence pipeline. Established an async backbone with Redis/Celery, integrated Apify for Google Maps scraping, and leveraged Gemini AI for structured competitive analysis (SWOT, Threat Scoring, Event Detection). The system now automatically updates competitor stats and creates activity events in the database following a successful scrape-and-analyze chain.
+*   **Involved Agents:** Agent_DevOps, Agent_Backend_Async, Agent_Scraping, Agent_Intelligence.
 *   **Logs:**
     *   [.apm/Memory/Phase_07_Real_Engines/Task_7_1_1_Redis_Config.md](.apm/Memory/Phase_07_Real_Engines/Task_7_1_1_Redis_Config.md)
     *   [.apm/Memory/Phase_07_Real_Engines/Task_7_1_2_Celery_Setup.md](.apm/Memory/Phase_07_Real_Engines/Task_7_1_2_Celery_Setup.md)
     *   [.apm/Memory/Phase_07_Real_Engines/Task_7_1_3_Worker_Container.md](.apm/Memory/Phase_07_Real_Engines/Task_7_1_3_Worker_Container.md)
     *   [.apm/Memory/Phase_07_Real_Engines/Task_7_1_4_Base_Retry_Logic.md](.apm/Memory/Phase_07_Real_Engines/Task_7_1_4_Base_Retry_Logic.md)
+    *   [.apm/Memory/Phase_07_Real_Engines/Task_7_2_1_Apify_Service.md](.apm/Memory/Phase_07_Real_Engines/Task_7_2_1_Apify_Service.md)
+    *   [.apm/Memory/Phase_07_Real_Engines/Task_7_2_2_Google_Maps_Connector.md](.apm/Memory/Phase_07_Real_Engines/Task_7_2_2_Google_Maps_Connector.md)
+    *   [.apm/Memory/Phase_07_Real_Engines/Task_7_2_3_Normalization_Logic.md](.apm/Memory/Phase_07_Real_Engines/Task_7_2_3_Normalization_Logic.md)
+    *   [.apm/Memory/Phase_07_Real_Engines/Task_7_2_4_Async_Scraping_Task.md](.apm/Memory/Phase_07_Real_Engines/Task_7_2_4_Async_Scraping_Task.md)
+    *   [.apm/Memory/Phase_07_Real_Engines/Task_7_3_1_Gemini_Service.md](.apm/Memory/Phase_07_Real_Engines/Task_7_3_1_Gemini_Service.md)
+    *   [.apm/Memory/Phase_07_Real_Engines/Task_7_3_2_Prompt_Engineering.md](.apm/Memory/Phase_07_Real_Engines/Task_7_3_2_Prompt_Engineering.md)
+    *   [.apm/Memory/Phase_07_Real_Engines/Task_7_3_3_Async_Analysis_Task.md](.apm/Memory/Phase_07_Real_Engines/Task_7_3_3_Async_Analysis_Task.md)
+    *   [.apm/Memory/Phase_07_Real_Engines/Task_7_3_4_Insight_Persistence.md](.apm/Memory/Phase_07_Real_Engines/Task_7_3_4_Insight_Persistence.md)

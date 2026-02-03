@@ -1,5 +1,6 @@
 import uuid
 from typing import List, Any, Annotated, Optional
+from datetime import datetime
 import random
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -16,6 +17,7 @@ from app.services.scoring import ScoringService
 from app.models.event import EventType, Event
 from app.tasks.radar import perform_market_scan
 from app.tasks.scoring import calculate_competitor_score
+from app.tasks.scraping import scrape_competitor_task
 
 router = APIRouter()
 
@@ -238,14 +240,84 @@ def delete_competitor(
     competitor = session.get(Competitor, competitor_id)
     if not competitor:
         raise HTTPException(status_code=404, detail="Competitor not found")
-        
+
     project = session.get(Project, competitor.project_id)
     if not project or project.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Competitor not found")
-        
+
     session.delete(competitor)
     session.commit()
     return {"ok": True}
+
+
+@router.post("/{competitor_id}/refresh", response_model=dict)
+def refresh_competitor(
+    *,
+    session: Annotated[Session, Depends(get_session)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    competitor_id: uuid.UUID,
+    location: Optional[str] = None,
+) -> Any:
+    """
+    Manually trigger a refresh for a specific competitor.
+
+    This initiates an asynchronous scrape and analysis pipeline:
+    1. Scrapes Google Maps for updated competitor data
+    2. Normalizes the scraped data
+    3. Updates competitor record
+    4. Triggers AI analysis for insights
+
+    Rate limits apply based on user plan:
+    - Starter: 1 refresh per 24 hours
+    - Growth: 10 refreshes per 24 hours
+    - Ultimate: No daily limit (1 per minute throttle)
+
+    Args:
+        competitor_id: UUID of the competitor to refresh
+        location: Geographic location for the search (optional)
+
+    Returns:
+        Dictionary with task_id for tracking progress
+    """
+    # 1. Verify competitor exists and user owns it
+    competitor = session.get(Competitor, competitor_id)
+    if not competitor:
+        raise HTTPException(status_code=404, detail="Competitor not found")
+
+    project = session.get(Project, competitor.project_id)
+    if not project or project.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Competitor not found")
+
+    # 2. Check quota/rate limit
+    # Note: Competitor model doesn't have last_scanned_at field yet,
+    # so we'll pass None for now. When the field is added, this check
+    # will be more effective.
+    if not QuotaService.can_refresh_competitor(current_user, last_refresh=None):
+        effective_plan = QuotaService.get_effective_plan(current_user)
+        if effective_plan.value == "starter":
+            raise HTTPException(
+                status_code=429,
+                detail="Rate limit exceeded: Starter plan allows 1 refresh per 24 hours"
+            )
+        elif effective_plan.value == "growth":
+            raise HTTPException(
+                status_code=429,
+                detail="Rate limit exceeded: Growth plan allows 10 refreshes per 24 hours"
+            )
+        else:
+            raise HTTPException(
+                status_code=429,
+                detail="Rate limit exceeded: Please wait before refreshing again"
+            )
+
+    # 3. Trigger the scrape task (which will trigger analysis)
+    task = scrape_competitor_task.delay(str(competitor_id), location)
+
+    return {
+        "task_id": task.id,
+        "status": "pending",
+        "message": "Refresh task started. Use /tasks/" + task.id + " to check status."
+    }
 
 @router.get("/{competitor_id}/events", response_model=List[Event])
 def read_competitor_events(

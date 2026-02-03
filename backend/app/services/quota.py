@@ -24,7 +24,7 @@ class QuotaService:
             if datetime.utcnow() > expiration_date:
                 # Trial expired, effectively Starter
                 return PlanType.STARTER
-        
+
         return user.plan_type
 
     @staticmethod
@@ -36,3 +36,47 @@ class QuotaService:
         effective_plan = QuotaService.get_effective_plan(user)
         limit = QuotaService.get_competitor_limit(effective_plan)
         return current_count < limit
+
+    @staticmethod
+    def can_refresh_competitor(user: User, last_refresh: Optional[datetime] = None) -> bool:
+        """
+        Check if user can refresh a competitor based on their plan.
+
+        Starter: 1 refresh per 24 hours
+        Growth: 10 refreshes per 24 hours
+        Ultimate: No limit (basic throttle only - 1 per minute)
+
+        Args:
+            user: The user attempting to refresh
+            last_refresh: Last time this competitor was refreshed (optional)
+
+        Returns:
+            True if refresh is allowed, False otherwise
+        """
+        effective_plan = QuotaService.get_effective_plan(user)
+
+        # Ultimate users: no daily limit, just basic throttle (1 per minute)
+        if effective_plan == PlanType.ULTIMATE:
+            if last_refresh:
+                time_since_last = datetime.utcnow() - last_refresh
+                # Allow refresh if at least 1 minute has passed
+                return time_since_last >= timedelta(minutes=1)
+            return True
+
+        # Growth users: 10 per 24 hours
+        if effective_plan == PlanType.GROWTH:
+            if last_refresh:
+                time_since_last = datetime.utcnow() - last_refresh
+                # Allow refresh if at least 2.4 hours has passed (24h / 10)
+                return time_since_last >= timedelta(hours=2.4)
+            return True
+
+        # Starter users: 1 per 24 hours
+        if effective_plan == PlanType.STARTER:
+            if last_refresh:
+                time_since_last = datetime.utcnow() - last_refresh
+                # Allow refresh if at least 24 hours have passed
+                return time_since_last >= timedelta(hours=24)
+            return True
+
+        return True
