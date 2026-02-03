@@ -103,6 +103,26 @@ services:
     volumes:
       - ./backend:/app
 
+  beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vigilux-beat
+    restart: always
+    command: celery -A app.core.celery_app beat -l info
+    environment:
+      DATABASE_URL: postgresql://vigilux_user:vigilux_password@db:5432/vigilux
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DB: 0
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - vigilux-network
+    volumes:
+      - ./backend:/app
+
   # Optional: Flower for monitoring Celery tasks
   flower:
     build:
