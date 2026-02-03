@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ExternalLink, Globe, Shield, Trash2, Edit } from 'lucide-react';
+import { ExternalLink, Globe, Shield, Trash2, Edit, RotateCw, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface Competitor {

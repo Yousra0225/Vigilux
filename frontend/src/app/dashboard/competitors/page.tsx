@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Plus } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import { CompetitorList, Competitor } from '@/components/competitors/CompetitorList';
 import { EventTimeline, Event } from '@/components/competitors/EventTimeline';
+import { useWebSocket } from '@/hooks/use-socket';
 
 interface Project {
     id: string;
@@ -22,6 +23,56 @@ export default function CompetitorsPage() {
   const [selectedCompetitorId, setSelectedCompetitorId] = useState<string | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
+
+  const [processingStates, setProcessingStates] = useState<Record<string, string>>({});
+  const [refreshKey, setRefreshKey] = useState(0);
+  const { lastMessage } = useWebSocket();
+
+  const handleRefresh = useCallback(async (competitorId: string) => {
+    try {
+      setProcessingStates(prev => ({ ...prev, [competitorId]: 'requested' }));
+      await api.post(`/api/v1/competitors/${competitorId}/refresh`);
+      toast.success('Refresh requested');
+    } catch (error) {
+      console.error('Failed to refresh competitor', error);
+      toast.error('Failed to start refresh');
+      setProcessingStates(prev => {
+          const newState = { ...prev };
+          delete newState[competitorId];
+          return newState;
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (lastMessage?.type === 'TASK_UPDATE' && lastMessage.data) {
+        const { competitor_id, status } = lastMessage.data;
+        if (competitor_id) {
+            setProcessingStates(prev => ({ ...prev, [competitor_id]: status }));
+            
+            if (status === 'analysis_complete') {
+                 toast.success('Analysis updated');
+                 setRefreshKey(prev => prev + 1);
+                 
+                 // Clear processing state after a delay
+                 setTimeout(() => {
+                     setProcessingStates(prev => {
+                         const ns = { ...prev };
+                         delete ns[competitor_id];
+                         return ns;
+                     });
+                 }, 3000);
+            } else if (String(status).includes('failed')) {
+                toast.error('Analysis failed');
+                setProcessingStates(prev => {
+                     const ns = { ...prev };
+                     delete ns[competitor_id];
+                     return ns;
+                 });
+            }
+        }
+    }
+  }, [lastMessage]);
 
   // 1. Fetch Projects on mount
   useEffect(() => {
@@ -64,7 +115,7 @@ export default function CompetitorsPage() {
       }
     };
     fetchCompetitors();
-  }, [selectedProjectId]);
+  }, [selectedProjectId, refreshKey]);
 
   // 3. Fetch Events when competitor selected
   useEffect(() => {
@@ -83,7 +134,7 @@ export default function CompetitorsPage() {
       }
     };
     fetchEvents();
-  }, [selectedCompetitorId]);
+  }, [selectedCompetitorId, refreshKey]);
 
   return (
     <div className="h-[calc(100vh-6rem)] flex flex-col">
@@ -120,6 +171,8 @@ export default function CompetitorsPage() {
                     selectedId={selectedCompetitorId}
                     onSelect={setSelectedCompetitorId}
                     loading={loadingCompetitors}
+                    onRefresh={handleRefresh}
+                    processingStates={processingStates}
                 />
             </div>
         </div>
