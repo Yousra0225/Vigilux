@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from enum import Enum
 from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import Field, SQLModel, Relationship
@@ -23,10 +24,11 @@ class Competitor(SQLModel, table=True):
     name: str = Field(nullable=False)
     url: str = Field(nullable=False)
     status: TrackingStatus = Field(
-        default=TrackingStatus.ACTIVE, 
+        default=TrackingStatus.ACTIVE,
         sa_column=sa.Column(sa.Enum(TrackingStatus, values_callable=lambda x: [e.value for e in x]), nullable=False)
     )
     score: Optional[float] = Field(default=None)
+    last_scanned_at: Optional[datetime] = Field(default=None, nullable=True)
 
     project: "Project" = Relationship(back_populates="competitors")
     events: List["Event"] = Relationship(back_populates="competitor")

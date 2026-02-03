@@ -135,9 +135,12 @@ def scrape_competitor_task(
             if normalized_data.get("score") is not None:
                 competitor.score = normalized_data["score"]
 
-            # Note: Additional fields like address, phone, last_scanned_at
+            # Update last_scanned_at timestamp
+            competitor.last_scanned_at = datetime.utcnow()
+
+            # Note: Additional fields like address, phone
             # would need to be added to the Competitor model schema
-            # For now, we log them and store in the description if available
+            # For now, we log them
 
             # Update competitor if there's additional info
             # (Since Competitor model is limited, we keep what we can update)
@@ -145,7 +148,7 @@ def scrape_competitor_task(
             session.commit()
             session.refresh(competitor)
 
-            logger.info(f"Updated competitor {competitor_id} with scraped data")
+            logger.info(f"Updated competitor {competitor_id} with scraped data (last_scanned_at: {competitor.last_scanned_at})")
 
         except Exception as e:
             logger.error(f"Failed to update competitor {competitor_id}: {e}")
