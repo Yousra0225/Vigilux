@@ -53,9 +53,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const login = (token: string) => {
+  const login = async (token: string) => {
     localStorage.setItem('token', token);
-    fetchUser();
+    setLoading(true);
+    await fetchUser();
     router.push('/dashboard');
     toast.success('Successfully logged in');
   };
