@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Lock, Globe, ExternalLink, ShieldAlert, Loader2 } from 'lucide-react';
+import { Search, Plus, Lock, Globe, ExternalLink, ShieldAlert, Loader2, BarChart2 } from 'lucide-react';
 import api from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { CompetitorRadarChart } from '@/components/radar/CompetitorRadarChart';
 
 interface RadarCompetitor {
   name: string;
@@ -28,6 +29,7 @@ export default function RadarPage() {
   const [results, setResults] = useState<RadarCompetitor[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isAdding, setIsAdding] = useState<string | null>(null);
+  const [selectedCompetitor, setSelectedCompetitor] = useState<RadarCompetitor | null>(null);
 
   const isStarter = user?.plan_type === 'starter';
 
@@ -43,6 +45,18 @@ export default function RadarPage() {
     fetchProjects();
   }, []);
 
+  const generateRadarData = (comp: RadarCompetitor) => {
+    // Synthetic mapping based on threat_score
+    const score = comp.threat_score;
+    return [
+      { subject: 'Market Presence', A: score, fullMark: 100 },
+      { subject: 'Innovation', A: Math.min(100, Math.round(score * 1.1)), fullMark: 100 },
+      { subject: 'Pricing Power', A: Math.min(100, Math.round(100 - (score * 0.4))), fullMark: 100 },
+      { subject: 'Customer Sentiment', A: Math.min(100, Math.round(score * 0.9 + 5)), fullMark: 100 },
+      { subject: 'Growth Velocity', A: Math.min(100, Math.round(score * 0.95)), fullMark: 100 },
+    ];
+  };
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.length < 3) {
@@ -50,11 +64,19 @@ export default function RadarPage() {
       return;
     }
     setIsSearching(true);
+    setSelectedCompetitor(null);
     try {
       const response = await api.get<RadarCompetitor[]>('/api/v1/competitors/radar', {
         params: { query: searchQuery }
       });
       setResults(response.data);
+      if (response.data.length > 0) {
+        // Default to the highest threat
+        const topThreat = response.data.reduce((prev, current) => 
+          (prev.threat_score > current.threat_score) ? prev : current
+        );
+        setSelectedCompetitor(topThreat);
+      }
       toast.success(`Found ${response.data.length} potential competitors`);
     } catch (error) {
       console.error('Radar search failed:', error);
@@ -119,12 +141,59 @@ export default function RadarPage() {
         </form>
       </div>
 
+      {selectedCompetitor && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="lg:col-span-1">
+             <CompetitorRadarChart 
+                data={generateRadarData(selectedCompetitor)} 
+                color={selectedCompetitor.threat_score > 70 ? '#ef4444' : selectedCompetitor.threat_score > 40 ? '#f59e0b' : '#10b981'}
+             />
+          </div>
+          <div className="lg:col-span-2 bg-white dark:bg-gray-900 p-6 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+              <BarChart2 className="h-5 w-5 text-blue-600" />
+              Analysis: {selectedCompetitor.name}
+            </h2>
+            <div className="space-y-4">
+               <div>
+                  <h4 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-1">Market Pitch</h4>
+                  <p className="text-gray-900 dark:text-gray-100">{selectedCompetitor.pitch}</p>
+               </div>
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-sm font-semibold text-green-600 dark:text-green-400 mb-2">Key Strengths</h4>
+                    <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                      {selectedCompetitor.strengths.slice(0, 4).map((s, i) => (
+                        <li key={i}>{s}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-red-600 dark:text-red-400 mb-2">Key Weaknesses</h4>
+                    <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-300 space-y-1">
+                      {selectedCompetitor.weaknesses.slice(0, 4).map((w, i) => (
+                        <li key={i}>{w}</li>
+                      ))}
+                    </ul>
+                  </div>
+               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {results.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {results.map((competitor) => (
             <div
               key={competitor.name}
-              className="group relative bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-all overflow-hidden"
+              onClick={() => setSelectedCompetitor(competitor)}
+              className={cn(
+                "group relative bg-white dark:bg-gray-900 rounded-xl border shadow-sm hover:shadow-md transition-all overflow-hidden cursor-pointer",
+                selectedCompetitor?.name === competitor.name 
+                  ? "border-blue-500 ring-1 ring-blue-500 dark:border-blue-400" 
+                  : "border-gray-200 dark:border-gray-800"
+              )}
             >
               {/* Threat Score Badge */}
               <div className="absolute top-4 right-4 z-10">
