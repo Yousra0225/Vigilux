@@ -3,6 +3,23 @@ from celery import Task
 
 logger = logging.getLogger(__name__)
 
+# Try importing httpx to define retryable exceptions
+try:
+    import httpx
+    HTTPX_EXCEPTIONS = (
+        httpx.TimeoutException,
+        httpx.NetworkError,
+        httpx.ConnectError,
+        httpx.RemoteProtocolError,
+        httpx.ReadTimeout,
+        httpx.WriteTimeout,
+        httpx.ConnectTimeout,
+        httpx.HTTPStatusError,
+    )
+except ImportError:
+    logger.warning("httpx not available, using generic Exception for retries in HTTPTask")
+    HTTPX_EXCEPTIONS = (Exception,)
+
 
 class BaseTask(Task):
     """
@@ -105,36 +122,7 @@ class HTTPTask(BaseTask):
     Automatically retries on common HTTP/network exceptions.
     """
 
-    autoretry_for = (
-        # httpx exceptions (will be imported when httpx is available)
-        'httpx.TimeoutException',
-        'httpx.NetworkError',
-        'httpx.ConnectError',
-        'httpx.RemoteProtocolError',
-        'httpx.ReadTimeout',
-        'httpx.WriteTimeout',
-        'httpx.ConnectTimeout',
-        'httpx.HTTPStatusError',  # For 429, 500, 502, 503, 504
-    )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Dynamically import httpx exceptions to avoid import errors
-        # if httpx is not installed
-        try:
-            import httpx
-            self.autoretry_for = (
-                httpx.TimeoutException,
-                httpx.NetworkError,
-                httpx.ConnectError,
-                httpx.RemoteProtocolError,
-                httpx.ReadTimeout,
-                httpx.WriteTimeout,
-                httpx.ConnectTimeout,
-            )
-        except ImportError:
-            logger.warning("httpx not available, using generic Exception for retries")
-            self.autoretry_for = (Exception,)
+    autoretry_for = HTTPX_EXCEPTIONS
 
     def should_retry_http_status(self, status_code: int) -> bool:
         """
