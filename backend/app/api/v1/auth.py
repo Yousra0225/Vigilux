@@ -11,7 +11,7 @@ from app.core.db import get_session
 from app.models.user import User
 from app.models.notification_setting import NotificationSetting, NotificationChannel
 from app.schemas.token import Token
-from app.schemas.user import UserCreate, UserRead
+from app.schemas.user import UserCreate, UserRead, UserUpdate
 
 from app.api.deps import get_current_user
 
@@ -23,6 +23,25 @@ def read_users_me(current_user: Annotated[User, Depends(get_current_user)]) -> U
     Get current user.
     """
     return current_user
+
+@router.patch("/me", response_model=UserRead)
+def update_user_me(
+    *,
+    session: Annotated[Session, Depends(get_session)],
+    user_in: UserUpdate,
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> User:
+    """
+    Update own user.
+    """
+    if user_in.niche is not None:
+        current_user.niche = user_in.niche
+    
+    session.add(current_user)
+    session.commit()
+    session.refresh(current_user)
+    return current_user
+
 
 @router.post("/login", response_model=Token)
 def login_access_token(

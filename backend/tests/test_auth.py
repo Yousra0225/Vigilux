@@ -54,3 +54,33 @@ def test_get_me(client: TestClient):
     )
     assert response.status_code == 200
     assert response.json()["email"] == "me@example.com"
+
+def test_update_niche(client: TestClient):
+    # Register and login to get token
+    client.post(
+        "/api/v1/auth/register",
+        json={"email": "niche@example.com", "password": "password123"}
+    )
+    login_res = client.post(
+        "/api/v1/auth/login",
+        data={"username": "niche@example.com", "password": "password123"}
+    )
+    token = login_res.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    # Check initial niche is None
+    response = client.get("/api/v1/auth/me", headers=headers)
+    assert response.json()["niche"] is None
+    
+    # Update niche
+    response = client.patch(
+        "/api/v1/auth/me",
+        headers=headers,
+        json={"niche": "SaaS"}
+    )
+    assert response.status_code == 200
+    assert response.json()["niche"] == "SaaS"
+    
+    # Verify persistence
+    response = client.get("/api/v1/auth/me", headers=headers)
+    assert response.json()["niche"] == "SaaS"

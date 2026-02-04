@@ -29,6 +29,7 @@ class User(SQLModel, table=True):
     )
     trial_start_date: datetime = Field(default_factory=datetime.utcnow, nullable=False)
     is_verified: bool = Field(default=False, nullable=False)
+    niche: str | None = Field(default=None, nullable=True)
     
     projects: List["Project"] = Relationship(back_populates="user")
     notification_settings: List["NotificationSetting"] = Relationship(back_populates="user")

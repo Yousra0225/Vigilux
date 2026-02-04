@@ -10,6 +10,7 @@ interface User {
   email: string;
   plan_type: 'starter' | 'growth' | 'ultimate';
   is_verified: boolean;
+  niche?: string;
 }
 
 interface AuthContextType {
