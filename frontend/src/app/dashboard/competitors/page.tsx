@@ -46,12 +46,15 @@ export default function CompetitorsPage() {
 
   useEffect(() => {
     if (lastMessage?.type === 'TASK_UPDATE' && lastMessage.data) {
-        const { competitor_id, status } = lastMessage.data;
+        const { competitor_id, status, competitor_name } = lastMessage.data;
         if (competitor_id) {
             setProcessingStates(prev => ({ ...prev, [competitor_id]: status }));
             
+            // Try to get name from payload or current list
+            const name = competitor_name || competitors.find(c => c.id === competitor_id)?.name || 'Competitor';
+
             if (status === 'analysis_complete') {
-                 toast.success('Analysis updated');
+                 toast.success(`New signals detected for ${name}`);
                  setRefreshKey(prev => prev + 1);
                  
                  // Clear processing state after a delay
@@ -63,7 +66,7 @@ export default function CompetitorsPage() {
                      });
                  }, 3000);
             } else if (String(status).includes('failed')) {
-                toast.error('Analysis failed');
+                toast.error(`Analysis failed for ${name}`);
                 setProcessingStates(prev => {
                      const ns = { ...prev };
                      delete ns[competitor_id];
@@ -72,7 +75,7 @@ export default function CompetitorsPage() {
             }
         }
     }
-  }, [lastMessage]);
+  }, [lastMessage, competitors]);
 
   // 1. Fetch Projects on mount
   useEffect(() => {

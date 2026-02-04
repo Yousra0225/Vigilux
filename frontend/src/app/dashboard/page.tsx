@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Users, Zap, Activity } from 'lucide-react';
+import { Users, Zap, Activity, Loader2 } from 'lucide-react';
 import api from '@/lib/api';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { ThreatTimeline } from '@/components/dashboard/ThreatTimeline';
 import { toast } from 'sonner';
+import { useWebSocket } from '@/hooks/use-socket';
 
 interface DashboardStats {
   total_competitors: number;
@@ -17,6 +18,24 @@ interface DashboardStats {
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  const [scanningCompetitor, setScanningCompetitor] = useState<string | null>(null);
+  const { lastMessage } = useWebSocket();
+
+  useEffect(() => {
+    if (lastMessage?.type === 'TASK_UPDATE' && lastMessage.data) {
+        const { status, competitor_name } = lastMessage.data;
+        // Check for start statuses
+        if (status === 'scraping_started' || status === 'analysis_started' || status === 'requested') {
+            setScanningCompetitor(competitor_name || 'Competitor');
+        } else if (status === 'analysis_complete' || String(status).includes('failed')) {
+            // Add a small delay before hiding to ensure user sees completion if they are staring at it, 
+            // but for a banner usually immediate removal or switching to "Done" is better. 
+            // We'll remove it.
+            setScanningCompetitor(null);
+        }
+    }
+  }, [lastMessage]);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -52,6 +71,15 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {scanningCompetitor && (
+        <div className="bg-blue-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-in slide-in-from-top-2 duration-300">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <p className="font-medium">
+                AI Engines are currently scanning <span className="font-bold">{scanningCompetitor}</span> for breakthroughs...
+            </p>
+        </div>
+      )}
+
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
         <p className="text-gray-500 dark:text-gray-400 mt-2">
