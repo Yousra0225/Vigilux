@@ -20,6 +20,7 @@ interface AuthContextType {
   logout: () => void;
   loading: boolean;
   refreshUser: () => Promise<void>;
+  updateNiche: (niche: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -74,8 +75,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await fetchUser();
   };
 
+  const updateNiche = async (niche: string) => {
+    try {
+      await api.patch('/api/v1/auth/me', { niche });
+      await fetchUser();
+      toast.success('Niche updated successfully!');
+    } catch (error: any)
+    {
+      const errorMessage = error.response?.data?.detail || 'Failed to update niche.';
+      toast.error(errorMessage);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, loading, refreshUser }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, loading, refreshUser, updateNiche }}>
       {children}
     </AuthContext.Provider>
   );
