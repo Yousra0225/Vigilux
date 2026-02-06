@@ -70,18 +70,17 @@ class ApifyService:
     def scrape_google_maps(self, name: str, location: str) -> List[Dict[str, Any]]:
         """
         Scrapes Google Maps for a specific competitor by name and location.
-        
+
         Args:
             name: The name of the competitor.
             location: The geographic location or address.
-            
+
         Returns:
             A list of dictionary items representing the scraped data.
         """
         run_input = {
-            "searchStrings": [f"{name} {location}"],
+            "searchStringsArray": [f"{name} {location}"],
             "maxReviews": 20,
-            "exportPlaceUrls": True,
         }
         
         logger.info(f"Scraping Google Maps for: {name} in {location}")

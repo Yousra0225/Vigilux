@@ -1,6 +1,13 @@
 from typing import List, Union, Optional
+from pathlib import Path
 from pydantic import AnyHttpUrl, field_validator
 from pydantic_settings import BaseSettings
+
+# Get the backend directory path and locate .env in parent (root) directory
+# config.py is at: backend/app/core/config.py
+# Go up 4 levels: core -> app -> backend -> root
+BACKEND_DIR = Path(__file__).resolve().parent.parent.parent.parent
+ENV_FILE = BACKEND_DIR / ".env"
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Vigilux"
@@ -61,7 +68,9 @@ class Settings(BaseSettings):
 
     model_config = {
         "case_sensitive": True,
-        "env_file": ".env"
+        "env_file": str(ENV_FILE),
+        "env_file_encoding": "utf-8",
+        "extra": "ignore"  # Ignore extra fields like frontend vars (NEXT_PUBLIC_*)
     }
 
 settings = Settings()
