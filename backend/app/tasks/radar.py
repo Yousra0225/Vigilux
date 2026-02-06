@@ -3,19 +3,17 @@ import random
 import uuid
 from typing import List
 
-from celery import shared_task
-
+from app.core.celery_app import celery_app
+from app.tasks.base import ScanningTask
 from app.services.apify import ApifyService
 
 logger = logging.getLogger(__name__)
 
 
-@shared_task(
+@celery_app.task(
+    base=ScanningTask,
     name="app.tasks.radar.perform_market_scan",
     bind=True,
-    autoretry_for=(Exception,),
-    retry_backoff=True,
-    retry_kwargs={"max_retries": 3},
 )
 def perform_market_scan(
     self,
@@ -133,7 +131,8 @@ def perform_market_scan(
     return results
 
 
-@shared_task(
+@celery_app.task(
+    base=ScanningTask,
     name="app.tasks.radar.add_competitors_from_scan",
     bind=True,
 )

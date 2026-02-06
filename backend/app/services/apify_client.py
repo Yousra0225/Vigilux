@@ -87,15 +87,15 @@ class ApifyService:
         logger.info(f"Scraping Google Maps for: {name} in {location}")
         
         try:
-            # Using compass/google-maps-scraper as it's a reliable choice
+            # Using compass/crawler-google-places (correct actor ID)
             results = self.run_actor(
-                actor_id="compass/google-maps-scraper",
+                actor_id="compass/crawler-google-places",
                 run_input=run_input
             )
             return results
         except Exception as e:
             logger.error(f"Google Maps scraping failed for {name}: {str(e)}")
-            # Return empty list on failure to allow the pipeline to continue
-            return []
+            # Re-raise to allow ScanningTask retry logic to handle transient failures
+            raise
 
 apify_service = ApifyService()

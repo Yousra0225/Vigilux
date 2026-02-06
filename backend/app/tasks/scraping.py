@@ -81,6 +81,19 @@ def scrape_competitor_task(
 
         logger.info(f"Scraping data for: {competitor.name}")
 
+        # Check rate limiting before scraping
+        from app.services.quota import QuotaService
+        if not QuotaService.can_refresh_competitor(user, competitor.last_scanned_at):
+            logger.warning(
+                f"Rate limit exceeded for {user.email}, competitor {competitor.name}. "
+                f"Last scanned: {competitor.last_scanned_at}"
+            )
+            return {
+                "success": False,
+                "competitor_id": competitor_id,
+                "message": "Rate limit exceeded. Please wait before refreshing again."
+            }
+
         # Emit: Scraping started
         if user_id:
             try:
