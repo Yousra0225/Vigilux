@@ -73,6 +73,48 @@ async def websocket_notifications(
         user_id: UUID of the user (path parameter for identification)
         token: JWT token for authentication (query parameter)
     """
+    await _handle_websocket_connection(websocket, user_id, token)
+
+
+@router.websocket("/ws/notifications/{user_id}")
+async def websocket_notifications_alias(
+    websocket: WebSocket,
+    user_id: str,
+    token: Annotated[str, Query(description="JWT authentication token")]
+) -> None:
+    """
+    WebSocket endpoint alias for real-time notifications.
+
+    This is an alias for /notifications/{user_id} at the /ws/ path.
+    Both endpoints provide identical functionality.
+
+    Usage:
+        - Connect to: ws://localhost:8000/api/v1/ws/notifications/{user_id}?token={jwt_token}
+        - Receive real-time updates about task progress, competitor changes, etc.
+
+    Args:
+        websocket: The WebSocket connection
+        user_id: UUID of the user (path parameter for identification)
+        token: JWT token for authentication (query parameter)
+    """
+    await _handle_websocket_connection(websocket, user_id, token)
+
+
+async def _handle_websocket_connection(
+    websocket: WebSocket,
+    user_id: str,
+    token: str
+) -> None:
+    """
+    Shared WebSocket connection handler.
+
+    Handles the common logic for WebSocket connection setup and management.
+
+    Args:
+        websocket: The WebSocket connection
+        user_id: UUID of the user (path parameter for identification)
+        token: JWT token for authentication (query parameter)
+    """
     # Validate user_id format
     try:
         user_uuid = uuid.UUID(user_id)

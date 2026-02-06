@@ -1,6 +1,8 @@
+import asyncio
 import json
 import logging
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, Optional, Any
 from fastapi import WebSocket
 
@@ -23,6 +25,8 @@ class ConnectionManager:
     - Celery tasks publish notifications to Redis channels: f"user:{user_id}"
     - The WebSocket endpoint subscribes to the user's Redis channel
     - Messages from Redis are forwarded to the connected WebSocket client
+    - Each user gets their own PubSub instance to avoid cross-talk
+    - Blocking Redis calls run in a thread pool executor to avoid blocking the event loop
     """
 
     def __init__(self):
@@ -32,7 +36,9 @@ class ConnectionManager:
 
         # Redis client for Pub/Sub
         self._redis_client: Optional[redis.Redis] = None
-        self._pubsub: Optional[redis.client.PubSub] = None
+
+        # Thread pool executor for blocking Redis operations
+        self._executor = ThreadPoolExecutor(max_workers=10, thread_name_prefix="redis_pubsub")
 
     @property
     def redis_client(self) -> redis.Redis:
@@ -45,11 +51,24 @@ class ConnectionManager:
             logger.info("Redis client initialized for WebSocket manager")
         return self._redis_client
 
-    def get_pubsub(self) -> redis.client.PubSub:
-        """Get or create a PubSub instance."""
-        if self._pubsub is None:
-            self._pubsub = self.redis_client.pubsub()
-        return self._pubsub
+    def _create_pubsub_for_user(self, user_id: uuid.UUID) -> redis.client.PubSub:
+        """
+        Create a new PubSub instance for a specific user.
+
+        Each user needs their own PubSub instance because Redis PubSub
+        connections can only be subscribed to one set of channels at a time.
+
+        Args:
+            user_id: UUID of the user
+
+        Returns:
+            A new PubSub instance for this user
+        """
+        pubsub = self.redis_client.pubsub()
+        channel = f"user:{user_id}"
+        pubsub.subscribe(channel)
+        logger.info(f"Created and subscribed PubSub instance for user {user_id} on channel {channel}")
+        return pubsub
 
     async def connect(self, websocket: WebSocket, user_id: uuid.UUID) -> str:
         """
@@ -170,33 +189,53 @@ class ConnectionManager:
         """
         Listen to Redis Pub/Sub for a specific user and forward messages to WebSocket.
 
-        This should be run as a background task when a WebSocket connects.
+        This runs blocking Redis operations in a thread pool to avoid blocking
+        the async event loop. Each user gets their own PubSub instance.
 
         Args:
             user_id: UUID of the user
             websocket: The WebSocket connection to send messages to
         """
+        # Create a dedicated PubSub instance for this user
+        pubsub = self._create_pubsub_for_user(user_id)
         channel = f"user:{user_id}"
-        pubsub = self.get_pubsub()
+
+        logger.info(f"Starting Redis listener for user {user_id} on channel {channel}")
 
         try:
-            pubsub.subscribe(channel)
-            logger.info(f"Subscribed to Redis channel: {channel}")
+            # Run the blocking pubsub.listen() in a thread pool
+            loop = asyncio.get_event_loop()
 
-            # Listen for messages
-            for message in pubsub.listen():
+            while True:
+                # Get next message from Redis (non-blocking via thread pool)
+                message = await loop.run_in_executor(
+                    self._executor,
+                    self._get_next_message,
+                    pubsub
+                )
+
+                if message is None:
+                    # Connection closed or timeout
+                    break
+
                 if message["type"] == "message":
                     data = message["data"]
                     try:
                         # Forward to WebSocket
                         await websocket.send_text(data)
-                        logger.debug(f"Forwarded Redis message to user {user_id}")
+                        logger.debug(f"Forwarded Redis message to user {user_id}: {data[:100]}...")
                     except Exception as e:
                         logger.error(f"Failed to forward Redis message to WebSocket: {e}")
                         break
 
                 elif message["type"] == "unsubscribe":
                     # Connection closed
+                    logger.info(f"Received unsubscribe signal for user {user_id}")
+                    break
+
+                elif message["type"] == "punsubscribe":
+                    # Pattern unsubscribe
+                    logger.info(f"Received punsubscribe signal for user {user_id}")
                     break
 
         except Exception as e:
@@ -204,9 +243,27 @@ class ConnectionManager:
         finally:
             try:
                 pubsub.unsubscribe(channel)
-                logger.info(f"Unsubscribed from Redis channel: {channel}")
+                pubsub.close()
+                logger.info(f"Unsubscribed and closed PubSub for user {user_id}")
             except Exception as e:
-                logger.error(f"Error unsubscribing from {channel}: {e}")
+                logger.error(f"Error cleaning up PubSub for user {user_id}: {e}")
+
+    def _get_next_message(self, pubsub: redis.client.PubSub) -> Optional[Dict[str, Any]]:
+        """
+        Get the next message from PubSub (blocking, runs in thread pool).
+
+        Args:
+            pubsub: The PubSub instance to listen on
+
+        Returns:
+            Message dict or None if connection closed
+        """
+        try:
+            for message in pubsub.listen():
+                return message
+        except Exception as e:
+            logger.error(f"Error getting message from PubSub: {e}")
+            return None
 
     def get_connection_count(self, user_id: Optional[uuid.UUID] = None) -> int:
         """
