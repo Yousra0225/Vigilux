@@ -51,7 +51,8 @@ def login_access_token(
     """
     OAuth2 compatible token login, get an access token for future requests
     """
-    statement = select(User).where(User.email == form_data.username)
+    # Case-insensitive email lookup
+    statement = select(User).where(User.email == form_data.username.lower())
     user = session.exec(statement).first()
 
     if not user or not security.verify_password(form_data.password, user.hashed_password):
@@ -72,7 +73,9 @@ def register_user(
     """
     Create new user with default notification settings.
     """
-    statement = select(User).where(User.email == user_in.email)
+    # Ensure email is stored in lowercase
+    user_email = user_in.email.lower()
+    statement = select(User).where(User.email == user_email)
     user = session.exec(statement).first()
     if user:
         raise HTTPException(
@@ -81,7 +84,7 @@ def register_user(
         )
 
     user = User(
-        email=user_in.email,
+        email=user_email,
         hashed_password=security.get_password_hash(user_in.password),
         is_verified=False
     )

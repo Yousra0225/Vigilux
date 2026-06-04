@@ -38,10 +38,11 @@ def seed_data():
 
         created_users = []
         for user_info in users_data:
-            existing_user = session.exec(select(User).where(User.email == user_info["email"])).first()
+            user_email = user_info["email"].lower()
+            existing_user = session.exec(select(User).where(User.email == user_email)).first()
             if not existing_user:
                 user = User(
-                    email=user_info["email"],
+                    email=user_email,
                     hashed_password=get_password_hash(user_info["password"]),
                     plan_type=user_info["plan_type"],
                     trial_start_date=user_info["trial_start_date"],

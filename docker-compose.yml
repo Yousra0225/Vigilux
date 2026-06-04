@@ -52,6 +52,7 @@ services:
       REDIS_PORT: 6379
       REDIS_DB: 0
       APIFY_API_TOKEN: ${APIFY_API_TOKEN:-}
+      PYTHONPATH: /app
     depends_on:
       db:
         condition: service_healthy
@@ -93,15 +94,7 @@ services:
       REDIS_PORT: 6379
       REDIS_DB: 0
       APIFY_API_TOKEN: ${APIFY_API_TOKEN:-}
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - vigilux-network
-    volumes:
-      - ./backend:/app
+      PYTHONPATH: /app
 
   beat:
     build:
