@@ -225,15 +225,10 @@ Cela démarre :
 docker-compose exec api alembic upgrade head
 ```
 
-5. **Créer des utilisateurs de test**
+5. **Créer des utilisateurs de test** (optionnel)
 ```bash
 docker-compose exec api python -m app.db.seed
 ```
-
-Utilisateurs créés :
-- `starter@example.com` / `password123` (Plan Starter)
-- `growth@example.com` / `password123` (Plan Growth)
-- `ultimate@example.com` / `password123` (Plan Ultimate)
 
 6. **Accéder à l'application**
 - Frontend : http://localhost:3000
@@ -242,33 +237,37 @@ Utilisateurs créés :
 
 ---
 
-## État Actuel du Projet
+## Fonctionnalités Techniques Implémentées
 
-### ✅ Fonctionnel
-- Architecture complète (7 services Docker)
-- Authentification JWT
-- CRUD Competitors basique
-- Scraping Apify fonctionnel
-- Tâches asynchrones Celery
-- WebSockets temps réel
-- Dashboard avec statistiques
-- Timeline d'événements
-- Interface de settings
+### Architecture & Infrastructure
+- **Microservices orchestrés** avec Docker Compose (7 services)
+- **Base de données PostgreSQL** avec migrations Alembic
+- **Cache & Message Broker** Redis pour performance et communication
+- **Async Task Processing** via Celery avec Celery Beat pour scheduling
+- **Real-time Communication** avec WebSockets (Redis Pub/Sub)
 
-### ⚠️ En Cours / Incomplet
-- Analyse IA (code prêt, API key à configurer)
-- Dispatch de notifications (stub seulement)
-- Bouton "Add Competitor" désactivé
-- CRUD Projects incomplet
-- Métriques radar mockées
+### Backend (FastAPI)
+- **API REST** complète avec documentation Swagger auto-générée
+- **Authentification JWT** sécurisée avec bcrypt
+- **Service Layer** modulaire (QuotaService, ScoringService, GeminiService, ApifyService)
+- **Web Scraping** intégré via Apify pour extraction de données Google Maps
+- **AI Analysis** avec Google Gemini pour génération d'insights
+- **Rate Limiting** par plan utilisateur (quotas competitors, fréquence refresh)
 
-### ❌ À Faire
-- Intégration SendGrid/Twilio
-- Paiement Stripe
-- Tests complets
-- Monitoring (Sentry)
-- Déploiement production
-- Documentation utilisateur
+### Frontend (Next.js 14)
+- **App Router** avec Server Components et Client Components
+- **TypeScript** pour type safety
+- **Real-time Updates** via WebSocket avec reconnexion automatique
+- **State Management** avec React Context et React Query
+- **UI Components** professionnels (Shadcn/ui + Tailwind CSS)
+- **Data Visualization** avec Recharts (timeline, radar charts)
+- **Dark Mode** support
+
+### DevOps & Testing
+- **GitHub Actions** CI/CD pour tests et linting automatiques
+- **Docker** pour environnement reproductible
+- **Tests** unitaires et d'intégration (Pytest, Vitest)
+- **E2E Testing** setup avec Playwright
 
 ---
 
