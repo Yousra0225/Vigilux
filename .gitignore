@@ -125,6 +125,11 @@ ENV/
 env.bak/
 venv.bak/
 
+# Private/Confidential Documentation (local only)
+PRIVATE.md
+PRIVATE_*.md
+*_PRIVATE.md
+
 # Spyder project settings
 .spyderproject
 .spyproject
