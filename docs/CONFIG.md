@@ -87,7 +87,7 @@ Google Gemini is used to analyze competitor data and generate insights.
 4. Generate API key
 5. Add to `.env`:
    ```env
-   GEMINI_API_KEY=AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   GEMINI_API_KEY=your_gemini_api_key_here
    ```
 
 **Pricing:**
