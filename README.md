@@ -48,8 +48,8 @@ Imaginez que vous êtes une agence immobilière à Paris :
 ### Services Externes
 - **Apify** - Plateforme de web scraping (Google Maps, sites web)
 - **Google Gemini AI** - Analyse intelligente des données de concurrents
-- **SendGrid** (à implémenter) - Envoi d'emails transactionnels
-- **Twilio** (à implémenter) - Envoi de SMS pour les alertes critiques
+- **SendGrid** - Envoi d'emails transactionnels et notifications
+- **Twilio** - Envoi de SMS pour les alertes critiques
 
 ### DevOps
 - **Docker** - Conteneurisation de tous les services
