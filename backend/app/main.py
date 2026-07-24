@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.config import settings
+
 from app.api.health import router as health_router
 from app.api.v1 import auth, competitors, dashboard, notifications, projects, websockets
+from app.core.config import settings
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

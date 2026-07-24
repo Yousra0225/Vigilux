@@ -1,5 +1,7 @@
 from fastapi.testclient import TestClient
+
 from app.models.notification_setting import NotificationChannel
+
 
 def get_auth_header(client: TestClient, email: str):
     client.post("/api/v1/auth/register", json={"email": email, "password": "password"})

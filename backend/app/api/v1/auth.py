@@ -1,19 +1,18 @@
-from typing import Annotated
 from datetime import timedelta
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
 
+from app.api.deps import get_current_user
 from app.core import security
 from app.core.config import settings
 from app.core.db import get_session
+from app.models.notification_setting import NotificationChannel, NotificationSetting
 from app.models.user import User
-from app.models.notification_setting import NotificationSetting, NotificationChannel
 from app.schemas.token import Token
 from app.schemas.user import UserCreate, UserRead, UserUpdate
-
-from app.api.deps import get_current_user
 
 router = APIRouter()
 

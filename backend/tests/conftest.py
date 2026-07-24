@@ -1,11 +1,12 @@
+from collections.abc import Generator
+
 import pytest
-from typing import Generator
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
 
-from app.main import app
 from app.core.db import get_session
+from app.main import app
 
 # Use an in-memory SQLite database for testing
 sqlite_url = "sqlite://"

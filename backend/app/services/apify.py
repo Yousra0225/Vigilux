@@ -1,5 +1,5 @@
 import logging
-from typing import List, Dict, Any, Optional
+from typing import Any
 
 from app.core.config import settings
 
@@ -21,7 +21,7 @@ class ApifyService:
     # - Website content extractor: apify/website-content-extractor
 
     @staticmethod
-    def _get_client() -> Optional[Any]:
+    def _get_client() -> Any | None:
         """
         Get an initialized ApifyClient instance.
 
@@ -37,17 +37,17 @@ class ApifyService:
         except ImportError:
             logger.error("apify-client not installed. Run: pip install apify-client")
             return None
-        except Exception as e:
-            logger.error(f"Failed to initialize ApifyClient: {e}")
+        except (OSError, RuntimeError, ValueError, TypeError) as exc:
+            logger.error(f"Failed to initialize ApifyClient: {exc}")
             return None
 
     @staticmethod
     def search_competitors(
         query: str,
-        location: Optional[str] = None,
+        location: str | None = None,
         max_results: int = 20,
         language: str = "en"
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Search for competitors using Apify's Google Maps Scraper.
 
@@ -107,12 +107,12 @@ class ApifyService:
             logger.info(f"Apify search completed: found {len(results)} results")
             return results
 
-        except Exception as e:
-            logger.error(f"Apify search failed: {e}")
+        except (OSError, RuntimeError, ValueError, TypeError, KeyError) as exc:
+            logger.error(f"Apify search failed: {exc}")
             return []
 
     @staticmethod
-    def _transform_apify_result(item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    def _transform_apify_result(item: dict[str, Any]) -> dict[str, Any] | None:
         """
         Transform raw Apify result into standardized competitor dict.
 
@@ -129,41 +129,40 @@ class ApifyService:
 
         # Build URL from website or direct link
         url = None
-        if "website" in item and item["website"]:
+        if item.get("website"):
             url = item["website"]
-        elif "dataUri" in item and item["dataUri"]:
+        elif item.get("dataUri"):
             url = item["dataUri"]
 
         # Build description from categories and other metadata
         description_parts = []
-        if "categories" in item and item["categories"]:
+        if item.get("categories"):
             if isinstance(item["categories"], list):
                 description_parts.extend(item["categories"][:3])
             else:
                 description_parts.append(str(item["categories"]))
 
-        if "address" in item and item["address"]:
-            if isinstance(item["address"], dict):
-                address_parts = [
-                    item["address"].get("street"),
-                    item["address"].get("city"),
-                    item["address"].get("state"),
-                    item["address"].get("country"),
-                ]
-                address_str = ", ".join([p for p in address_parts if p])
-                if address_str:
-                    description_parts.append(f"Located in {address_str}")
+        if item.get("address") and isinstance(item["address"], dict):
+            address_parts = [
+                item["address"].get("street"),
+                item["address"].get("city"),
+                item["address"].get("state"),
+                item["address"].get("country"),
+            ]
+            address_str = ", ".join([p for p in address_parts if p])
+            if address_str:
+                description_parts.append(f"Located in {address_str}")
 
         description = " | ".join(description_parts) if description_parts else "Business listing"
 
         # Calculate a base score from rating and review count
         score = 50  # Base score
-        if "totalScore" in item and item["totalScore"]:
+        if item.get("totalScore"):
             # Google ratings are typically 1-5, normalize to 0-100
             rating = float(item["totalScore"])
             score += int((rating / 5.0) * 30)  # Max 30 points for rating
 
-        if "reviewsCount" in item and item["reviewsCount"]:
+        if item.get("reviewsCount"):
             # More reviews = more established business
             review_count = int(item["reviewsCount"])
             if review_count > 1000:
@@ -188,7 +187,7 @@ class ApifyService:
         }
 
     @staticmethod
-    def scrape_website(url: str) -> Optional[Dict[str, Any]]:
+    def scrape_website(url: str) -> dict[str, Any] | None:
         """
         Scrape a website for additional competitor information.
 
@@ -226,8 +225,8 @@ class ApifyService:
 
             return None
 
-        except Exception as e:
-            logger.error(f"Website scraping failed for {url}: {e}")
+        except (OSError, RuntimeError, ValueError, TypeError, KeyError) as exc:
+            logger.error(f"Website scraping failed for {url}: {exc}")
             return None
 
     @staticmethod

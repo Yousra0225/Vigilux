@@ -1,7 +1,8 @@
 import random
-from typing import Dict, Any
+from typing import Any
 
 from app.models.event import Event, EventType
+
 
 class ScoringService:
     @staticmethod
@@ -32,7 +33,7 @@ class ScoringService:
         return final_score
 
     @staticmethod
-    def analyze_event(event: Event) -> Dict[str, Any]:
+    def analyze_event(event: Event) -> dict[str, Any]:
         """
         Analyze an event and return insights.
         """

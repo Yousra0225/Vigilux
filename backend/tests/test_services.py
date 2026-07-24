@@ -1,10 +1,12 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
+
+from app.models.event import Event, EventType
+from app.models.notification_setting import NotificationChannel, NotificationSetting
+from app.models.user import PlanType, User
+from app.services.notifications import NotificationService
 from app.services.quota import QuotaService
 from app.services.scoring import ScoringService
-from app.services.notifications import NotificationService
-from app.models.user import User, PlanType
-from app.models.event import Event, EventType
-from app.models.notification_setting import NotificationSetting, NotificationChannel
+
 
 def test_quota_service_effective_plan():
     # Test Growth plan not expired
@@ -12,7 +14,7 @@ def test_quota_service_effective_plan():
         email="growth@test.com",
         hashed_password="...",
         plan_type=PlanType.GROWTH,
-        trial_start_date=datetime.utcnow()
+        trial_start_date=datetime.now(UTC)
     )
     assert QuotaService.get_effective_plan(user_growth) == PlanType.GROWTH
 
@@ -21,7 +23,7 @@ def test_quota_service_effective_plan():
         email="expired@test.com",
         hashed_password="...",
         plan_type=PlanType.GROWTH,
-        trial_start_date=datetime.utcnow() - timedelta(days=8)
+        trial_start_date=datetime.now(UTC) - timedelta(days=8)
     )
     assert QuotaService.get_effective_plan(user_expired) == PlanType.STARTER
 
@@ -77,7 +79,7 @@ def test_notification_service_plan_check(session, caplog):
         description="CEO Resigned",
         score=95,
         competitor_id=uuid.uuid4(),
-        timestamp=datetime.utcnow()
+        timestamp=datetime.now(UTC)
     )
 
     # Enable SMS (which is restricted)

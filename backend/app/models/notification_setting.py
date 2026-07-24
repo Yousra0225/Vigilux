@@ -1,9 +1,10 @@
 import uuid
 from enum import Enum
-from typing import TYPE_CHECKING, Optional
-from sqlmodel import Field, SQLModel, Relationship
-import uuid6
+from typing import TYPE_CHECKING
+
 import sqlalchemy as sa
+import uuid6
+from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
     from .user import User
@@ -30,6 +31,6 @@ class NotificationSetting(SQLModel, table=True):
     )
     min_score: int = Field(default=70, nullable=False)
     enabled: bool = Field(default=True, nullable=False)
-    destination: Optional[str] = Field(default=None, nullable=True)
+    destination: str | None = Field(default=None, nullable=True)
 
     user: "User" = Relationship(back_populates="notification_settings")

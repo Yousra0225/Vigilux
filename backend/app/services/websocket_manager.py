@@ -3,10 +3,12 @@ import json
 import logging
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from typing import Dict, Optional, Any
-from fastapi import WebSocket
+from datetime import UTC, datetime
+from typing import Any
 
 import redis
+from fastapi import WebSocket
+from starlette.websockets import WebSocketDisconnect
 
 from app.core.config import settings
 
@@ -32,10 +34,10 @@ class ConnectionManager:
     def __init__(self):
         # Store active WebSocket connections locally
         # Format: {user_id: {connection_id: WebSocket}}
-        self.active_connections: Dict[uuid.UUID, Dict[str, WebSocket]] = {}
+        self.active_connections: dict[uuid.UUID, dict[str, WebSocket]] = {}
 
         # Redis client for Pub/Sub
-        self._redis_client: Optional[redis.Redis] = None
+        self._redis_client: redis.Redis | None = None
 
         # Thread pool executor for blocking Redis operations
         self._executor = ThreadPoolExecutor(max_workers=10, thread_name_prefix="redis_pubsub")
@@ -111,7 +113,7 @@ class ConnectionManager:
             if not self.active_connections[user_id]:
                 del self.active_connections[user_id]
 
-    async def send_message(self, message: str, user_id: uuid.UUID, connection_id: Optional[str] = None) -> None:
+    async def send_message(self, message: str, user_id: uuid.UUID, connection_id: str | None = None) -> None:
         """
         Send a message to a specific user's WebSocket connections.
 
@@ -133,7 +135,7 @@ class ConnectionManager:
         for conn_id, websocket in list(connections_to_send.items()):
             try:
                 await websocket.send_text(message)
-            except Exception as e:
+            except (WebSocketDisconnect, RuntimeError, ConnectionError, OSError) as e:
                 logger.warning(f"Failed to send to connection {conn_id}: {e}")
                 # Remove dead connection
                 self.disconnect(user_id, conn_id)
@@ -148,7 +150,7 @@ class ConnectionManager:
         for user_id in list(self.active_connections.keys()):
             await self.send_message(message, user_id)
 
-    def publish_notification(self, user_id: uuid.UUID, message: Dict[str, Any]) -> None:
+    def publish_notification(self, user_id: uuid.UUID, message: dict[str, Any]) -> None:
         """
         Publish a notification to Redis for a specific user.
 
@@ -165,10 +167,10 @@ class ConnectionManager:
                 json.dumps(message)
             )
             logger.debug(f"Published notification to {channel}: {message.get('type', 'unknown')}")
-        except Exception as e:
+        except redis.RedisError as e:
             logger.error(f"Failed to publish notification to Redis: {e}")
 
-    def publish_broadcast(self, message: Dict[str, Any]) -> None:
+    def publish_broadcast(self, message: dict[str, Any]) -> None:
         """
         Publish a broadcast notification to all users via Redis.
 
@@ -182,7 +184,7 @@ class ConnectionManager:
                 json.dumps(message)
             )
             logger.debug(f"Published broadcast to {channel}: {message.get('type', 'unknown')}")
-        except Exception as e:
+        except redis.RedisError as e:
             logger.error(f"Failed to publish broadcast to Redis: {e}")
 
     async def listen_to_redis(self, user_id: uuid.UUID, websocket: WebSocket) -> None:
@@ -224,7 +226,7 @@ class ConnectionManager:
                         # Forward to WebSocket
                         await websocket.send_text(data)
                         logger.debug(f"Forwarded Redis message to user {user_id}: {data[:100]}...")
-                    except Exception as e:
+                    except (WebSocketDisconnect, RuntimeError, ConnectionError, OSError) as e:
                         logger.error(f"Failed to forward Redis message to WebSocket: {e}")
                         break
 
@@ -238,17 +240,17 @@ class ConnectionManager:
                     logger.info(f"Received punsubscribe signal for user {user_id}")
                     break
 
-        except Exception as e:
+        except (WebSocketDisconnect, RuntimeError, ConnectionError, OSError, redis.RedisError) as e:
             logger.error(f"Error in Redis listener for user {user_id}: {e}")
         finally:
             try:
                 pubsub.unsubscribe(channel)
                 pubsub.close()
                 logger.info(f"Unsubscribed and closed PubSub for user {user_id}")
-            except Exception as e:
+            except redis.RedisError as e:
                 logger.error(f"Error cleaning up PubSub for user {user_id}: {e}")
 
-    def _get_next_message(self, pubsub: redis.client.PubSub) -> Optional[Dict[str, Any]]:
+    def _get_next_message(self, pubsub: redis.client.PubSub) -> dict[str, Any] | None:
         """
         Get the next message from PubSub (blocking, runs in thread pool).
 
@@ -261,11 +263,11 @@ class ConnectionManager:
         try:
             for message in pubsub.listen():
                 return message
-        except Exception as e:
+        except redis.RedisError as e:
             logger.error(f"Error getting message from PubSub: {e}")
             return None
 
-    def get_connection_count(self, user_id: Optional[uuid.UUID] = None) -> int:
+    def get_connection_count(self, user_id: uuid.UUID | None = None) -> int:
         """
         Get the number of active connections.
 
@@ -284,7 +286,19 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-def notify_user(user_id: uuid.UUID, notification_type: str, data: Dict[str, Any]) -> None:
+def emit_task_update(user_id: uuid.UUID, data: dict[str, Any]) -> None:
+    """Send a task progress update with a UTC timestamp."""
+    notify_user(
+        user_id=user_id,
+        notification_type="TASK_UPDATE",
+        data={
+            **data,
+            "timestamp": datetime.now(UTC).isoformat(),
+        },
+    )
+
+
+def notify_user(user_id: uuid.UUID, notification_type: str, data: dict[str, Any]) -> None:
     """
     Convenience function to send a notification to a user.
 
@@ -304,7 +318,7 @@ def notify_user(user_id: uuid.UUID, notification_type: str, data: Dict[str, Any]
     manager.publish_notification(user_id, message)
 
 
-def broadcast_notification(notification_type: str, data: Dict[str, Any]) -> None:
+def broadcast_notification(notification_type: str, data: dict[str, Any]) -> None:
     """
     Convenience function to broadcast a notification to all users.
 
@@ -322,7 +336,8 @@ def broadcast_notification(notification_type: str, data: Dict[str, Any]) -> None
 
 __all__ = [
     'ConnectionManager',
+    'broadcast_notification',
+    'emit_task_update',
     'manager',
-    'notify_user',
-    'broadcast_notification'
+    'notify_user'
 ]

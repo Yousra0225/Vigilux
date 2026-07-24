@@ -1,11 +1,13 @@
+import uuid
+from datetime import UTC, datetime
+
 from fastapi.testclient import TestClient
 from sqlmodel import Session
-from app.models.project import Project
+
 from app.models.competitor import Competitor
 from app.models.event import Event, EventType
-from datetime import datetime
+from app.models.project import Project
 
-import uuid
 
 def get_auth_header(client: TestClient, email: str):
     client.post("/api/v1/auth/register", json={"email": email, "password": "password"})
@@ -27,7 +29,7 @@ def test_dashboard_stats(client: TestClient, session: Session):
     session.add(comp)
     session.commit()
     
-    event = Event(competitor_id=comp.id, type=EventType.PRICE, description="D", score=90, timestamp=datetime.utcnow())
+    event = Event(competitor_id=comp.id, type=EventType.PRICE, description="D", score=90, timestamp=datetime.now(UTC))
     session.add(event)
     session.commit()
     

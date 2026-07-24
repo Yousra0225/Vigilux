@@ -1,11 +1,11 @@
-import logging
 import json
-from typing import List, Optional
+import logging
+
 from sqlmodel import Session, select
 
 from app.models.event import Event
-from app.models.user import User, PlanType
-from app.models.notification_setting import NotificationSetting, NotificationChannel
+from app.models.notification_setting import NotificationChannel, NotificationSetting
+from app.models.user import PlanType, User
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ class NotificationService:
     """
 
     @staticmethod
-    def get_user_notification_settings(session: Session, user_id: str) -> List[NotificationSetting]:
+    def get_user_notification_settings(session: Session, user_id: str) -> list[NotificationSetting]:
         """
         Get all notification settings for a user.
         """
@@ -48,21 +48,24 @@ class NotificationService:
 
         # Find matching notification channels
         for setting in settings:
+            if (
+                setting.enabled
+                and event.score >= setting.min_score
+                and setting.channel in (NotificationChannel.SMS, NotificationChannel.WHATSAPP)
+                and user.plan_type != PlanType.ULTIMATE
+            ):
+                logger.warning(
+                    f"Blocking {setting.channel} notification for user {user.email}. "
+                    f"Plan {user.plan_type} does not support this channel."
+                )
+                continue
+
             if setting.enabled and event.score >= setting.min_score:
-                # Plan Tier Restrictions
-                if setting.channel in [NotificationChannel.SMS, NotificationChannel.WHATSAPP]:
-                    if user.plan_type != PlanType.ULTIMATE:
-                        logger.warning(
-                            f"Blocking {setting.channel} notification for user {user.email}. "
-                            f"Plan {user.plan_type} does not support this channel."
-                        )
-                        continue
-                
                 NotificationService._send_notification(
-                    setting.channel, 
-                    event, 
-                    event.score, 
-                    setting.destination
+                    setting.channel,
+                    event,
+                    event.score,
+                    setting.destination,
                 )
 
     @staticmethod
@@ -70,7 +73,7 @@ class NotificationService:
         channel: NotificationChannel, 
         event: Event, 
         score: float, 
-        destination: Optional[str] = None
+        destination: str | None = None
     ) -> None:
         """
         Send a notification through the specified channel.
@@ -132,7 +135,7 @@ class NotificationService:
         logger.info(f"MOCK EMAIL: Sending to {email} | Urgency: {urgency} | Content: {content}")
 
     @staticmethod
-    def dispatch_bulk_notifications(session: Session, user_ids: List[str], event: Event) -> None:
+    def dispatch_bulk_notifications(session: Session, user_ids: list[str], event: Event) -> None:
         """
         Dispatch notifications to multiple users for a single event.
 

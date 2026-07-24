@@ -1,9 +1,12 @@
 import logging
-from typing import Optional, Dict, Any
+from typing import Any, ClassVar
 
 from app.core.config import settings
+from app.schemas.intelligence import (
+    IntelligenceReport,
+    safe_parse_intelligence_response,
+)
 from app.services.intelligence_prompts import IntelligencePrompts
-from app.schemas.intelligence import IntelligenceReport, safe_parse_intelligence_response
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +26,7 @@ class GeminiService:
 
     # Safety settings for business analysis use case
     # Use BLOCK_NONE to be permissive for legitimate business content
-    SAFETY_SETTINGS = [
+    SAFETY_SETTINGS: ClassVar[list[dict[str, str]]] = [
         {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
         {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
         {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_NONE"},
@@ -52,8 +55,8 @@ class GeminiService:
         except ImportError:
             logger.error("google-generativeai not installed. Run: pip install google-generativeai")
             return None
-        except Exception as e:
-            logger.error(f"Failed to initialize Gemini client: {e}")
+        except (OSError, RuntimeError, ValueError, TypeError) as exc:
+            logger.error(f"Failed to initialize Gemini client: {exc}")
             return None
 
     @staticmethod
@@ -78,8 +81,8 @@ class GeminiService:
             )
             logger.debug(f"Using Gemini model: {GeminiService.MODEL_NAME}")
             return model
-        except Exception as e:
-            logger.warning(f"Failed to initialize {GeminiService.MODEL_NAME}: {e}")
+        except (OSError, RuntimeError, ValueError, TypeError) as exc:
+            logger.warning(f"Failed to initialize {GeminiService.MODEL_NAME}: {exc}")
             try:
                 model = genai.GenerativeModel(
                     model_name=GeminiService.MODEL_FALLBACK,
@@ -87,12 +90,12 @@ class GeminiService:
                 )
                 logger.debug(f"Using fallback Gemini model: {GeminiService.MODEL_FALLBACK}")
                 return model
-            except Exception as fallback_error:
+            except (OSError, RuntimeError, ValueError, TypeError) as fallback_error:
                 logger.error(f"Failed to initialize Gemini model: {fallback_error}")
                 return None
 
     @staticmethod
-    def generate_insight(text_data: str) -> Optional[str]:
+    def generate_insight(text_data: str) -> str | None:
         """
         Generate an insight from raw text data using Gemini.
 
@@ -136,8 +139,8 @@ class GeminiService:
                 logger.warning("Gemini returned empty response")
                 return None
 
-        except Exception as e:
-            logger.error(f"Gemini insight generation failed: {e}")
+        except (OSError, RuntimeError, ValueError, TypeError, AttributeError) as exc:
+            logger.error(f"Gemini insight generation failed: {exc}")
             return None
 
     @staticmethod
@@ -149,8 +152,8 @@ class GeminiService:
     def analyze_competitor_intelligence(
         competitor_name: str,
         raw_data: str,
-        additional_context: Optional[Dict[str, Any]] = None
-    ) -> Optional[IntelligenceReport]:
+        additional_context: dict[str, Any] | None = None
+    ) -> IntelligenceReport | None:
         """
         Generate structured competitive intelligence from raw data.
 
@@ -216,17 +219,17 @@ class GeminiService:
             )
             return report
 
-        except Exception as e:
-            logger.error(f"Competitor intelligence analysis failed: {e}")
+        except (OSError, RuntimeError, ValueError, TypeError, AttributeError) as exc:
+            logger.error(f"Competitor intelligence analysis failed: {exc}")
             return None
 
     @staticmethod
     def analyze_from_scraped_data(
         name: str,
         description: str,
-        reviews: Optional[list[str]] = None,
+        reviews: list[str] | None = None,
         **kwargs
-    ) -> Optional[IntelligenceReport]:
+    ) -> IntelligenceReport | None:
         """
         Analyze competitor from structured scraped data.
 

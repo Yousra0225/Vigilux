@@ -1,6 +1,8 @@
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
+
 from app.models.user import User
+
 
 def test_register_user(client: TestClient, session: Session):
     response = client.post(

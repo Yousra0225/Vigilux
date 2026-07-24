@@ -1,14 +1,14 @@
-from datetime import datetime, timedelta
-from typing import Any, Annotated
+from datetime import UTC, datetime, timedelta
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
-from sqlmodel import Session, select, func
+from sqlmodel import Session, func, select
 
 from app.api.deps import get_current_user, get_session
-from app.models.user import User
 from app.models.competitor import Competitor
-from app.models.project import Project
 from app.models.event import Event
+from app.models.project import Project
+from app.models.user import User
 from app.schemas.dashboard import DashboardStats, EventCount
 
 router = APIRouter()
@@ -32,7 +32,7 @@ def get_dashboard_stats(
     ).one()
 
     # 2. Breakthroughs Today (Score > 70, timestamp >= today start)
-    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
     
     breakthroughs_today = session.exec(
         select(func.count(Event.id))

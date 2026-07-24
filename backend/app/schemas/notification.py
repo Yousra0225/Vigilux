@@ -1,6 +1,7 @@
 import uuid
-from typing import List, Optional
+
 from pydantic import BaseModel
+
 from app.models.notification_setting import NotificationChannel
 
 
@@ -8,7 +9,7 @@ class NotificationSettingBase(BaseModel):
     channel: NotificationChannel
     min_score: int
     enabled: bool
-    destination: Optional[str] = None
+    destination: str | None = None
 
 
 class NotificationSettingCreate(NotificationSettingBase):
@@ -16,9 +17,9 @@ class NotificationSettingCreate(NotificationSettingBase):
 
 
 class NotificationSettingUpdate(BaseModel):
-    min_score: Optional[int] = None
-    enabled: Optional[bool] = None
-    destination: Optional[str] = None
+    min_score: int | None = None
+    enabled: bool | None = None
+    destination: str | None = None
 
 
 class NotificationSettingRead(NotificationSettingBase):
@@ -30,4 +31,4 @@ class NotificationSettingRead(NotificationSettingBase):
 
 
 class NotificationSettingsList(BaseModel):
-    settings: List[NotificationSettingRead]
+    settings: list[NotificationSettingRead]

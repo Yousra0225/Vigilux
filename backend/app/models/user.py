@@ -1,15 +1,17 @@
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import List, TYPE_CHECKING
-from sqlmodel import Field, SQLModel, Relationship
+from typing import TYPE_CHECKING
+
 import uuid6
+from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
-    from .project import Project
     from .notification_setting import NotificationSetting
+    from .project import Project
 
 import sqlalchemy as sa
+
 
 class PlanType(str, Enum):
     STARTER = "starter"
@@ -31,5 +33,5 @@ class User(SQLModel, table=True):
     is_verified: bool = Field(default=False, nullable=False)
     niche: str | None = Field(default=None, nullable=True)
     
-    projects: List["Project"] = Relationship(back_populates="user")
-    notification_settings: List["NotificationSetting"] = Relationship(back_populates="user")
+    projects: list["Project"] = Relationship(back_populates="user")
+    notification_settings: list["NotificationSetting"] = Relationship(back_populates="user")

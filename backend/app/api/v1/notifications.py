@@ -1,22 +1,22 @@
-from typing import Annotated, List
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 
-from app.core.db import get_session
-from app.models.user import User
-from app.models.notification_setting import NotificationSetting, NotificationChannel
-from app.schemas.notification import NotificationSettingRead, NotificationSettingUpdate
 from app.api.deps import get_current_user
+from app.core.db import get_session
+from app.models.notification_setting import NotificationChannel, NotificationSetting
+from app.models.user import User
+from app.schemas.notification import NotificationSettingRead, NotificationSettingUpdate
 
 router = APIRouter()
 
 
-@router.get("/users/me/notifications", response_model=List[NotificationSettingRead])
+@router.get("/users/me/notifications", response_model=list[NotificationSettingRead])
 def get_notification_settings(
     session: Annotated[Session, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
-) -> List[NotificationSetting]:
+) -> list[NotificationSetting]:
     """
     Get all notification settings for the current user.
     """
@@ -59,11 +59,11 @@ def update_notification_setting(
     return setting
 
 
-@router.post("/users/me/notifications/reset", response_model=List[NotificationSettingRead])
+@router.post("/users/me/notifications/reset", response_model=list[NotificationSettingRead])
 def reset_notification_settings(
     session: Annotated[Session, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
-) -> List[NotificationSetting]:
+) -> list[NotificationSetting]:
     """
     Reset notification settings to defaults.
     """

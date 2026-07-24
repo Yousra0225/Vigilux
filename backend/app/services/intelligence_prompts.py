@@ -5,7 +5,7 @@ Provides structured prompts to extract SWOT analysis, threat scoring,
 and key events from raw competitor data.
 """
 
-from typing import Dict, Any, List
+from typing import Any
 
 
 class IntelligencePrompts:
@@ -60,7 +60,7 @@ IMPORTANT: Respond ONLY with valid JSON. Do not include markdown formatting, exp
     def build_analysis_prompt(
         competitor_name: str,
         raw_data: str,
-        additional_context: Dict[str, Any] | None = None
+        additional_context: dict[str, Any] | None = None
     ) -> str:
         """
         Build a complete analysis prompt from raw competitor data.
@@ -81,7 +81,7 @@ IMPORTANT: Respond ONLY with valid JSON. Do not include markdown formatting, exp
                 context_parts.append(f"Website: {additional_context['url']}")
             if "location" in additional_context:
                 context_parts.append(f"Location: {additional_context['location']}")
-            if "categories" in additional_context and additional_context["categories"]:
+            if additional_context.get("categories"):
                 categories = ", ".join(additional_context["categories"])
                 context_parts.append(f"Categories: {categories}")
             if "rating" in additional_context:
@@ -168,7 +168,7 @@ class PromptBuilder:
     def from_scraped_data(
         name: str,
         description: str,
-        reviews: List[str] | None = None,
+        reviews: list[str] | None = None,
         **kwargs
     ) -> str:
         """
@@ -193,7 +193,7 @@ class PromptBuilder:
         return IntelligencePrompts.build_analysis_prompt(name, raw_data, kwargs)
 
     @staticmethod
-    def from_apify_result(result: Dict[str, Any]) -> str:
+    def from_apify_result(result: dict[str, Any]) -> str:
         """
         Build prompt directly from Apify scraper result.
 
@@ -207,11 +207,11 @@ class PromptBuilder:
 
         # Extract description from categories and other metadata
         parts = []
-        if "categories" in result and result["categories"]:
+        if result.get("categories"):
             parts.append(f"Categories: {', '.join(result['categories'][:5])}")
 
         # Add reviews if available
-        if "reviews" in result and result["reviews"]:
+        if result.get("reviews"):
             parts.append("\nRecent Reviews:")
             for review in result["reviews"][:10]:
                 text = review.get("text") or review.get("comment", "")

@@ -1,5 +1,5 @@
-from typing import Annotated
 import uuid
+from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -9,8 +9,8 @@ from sqlmodel import Session
 
 from app.core.config import settings
 from app.core.db import get_session
-from app.schemas.token import TokenPayload
 from app.models.user import User
+from app.schemas.token import TokenPayload
 
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/auth/login"

@@ -3,7 +3,7 @@ import logging
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, status
+from fastapi import APIRouter, Query, WebSocket, WebSocketDisconnect, status
 from jose import JWTError, jwt
 
 from app.core.config import settings
@@ -37,6 +37,7 @@ async def get_user_from_token(token: str) -> User | None:
 
         # Import here to avoid circular dependency
         from sqlmodel import select
+
         from app.core.db import get_session
         from app.models.user import User
 
@@ -147,8 +148,8 @@ async def _handle_websocket_connection(
             "user_id": str(user_uuid),
             "message": "WebSocket connection established"
         }))
-    except Exception as e:
-        logger.error(f"Failed to send connection message: {e}")
+    except (RuntimeError, ConnectionError, OSError, TypeError, ValueError) as exc:
+        logger.error(f"Failed to send connection message: {exc}")
         manager.disconnect(user_uuid, connection_id)
         return
 
@@ -161,8 +162,8 @@ async def _handle_websocket_connection(
 
     except WebSocketDisconnect:
         logger.info(f"WebSocket disconnected by client: user={user_uuid}, conn={connection_id}")
-    except Exception as e:
-        logger.error(f"WebSocket error for user {user_uuid}: {e}")
+    except (RuntimeError, ConnectionError, OSError) as exc:
+        logger.error(f"WebSocket error for user {user_uuid}: {exc}")
     finally:
         # Clean up connection
         manager.disconnect(user_uuid, connection_id)

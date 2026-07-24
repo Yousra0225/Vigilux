@@ -1,15 +1,17 @@
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Optional, List, TYPE_CHECKING
-from sqlmodel import Field, SQLModel, Relationship
+from typing import TYPE_CHECKING
+
 import uuid6
+from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
-    from .project import Project
     from .event import Event
+    from .project import Project
 
 import sqlalchemy as sa
+
 
 class TrackingStatus(str, Enum):
     ACTIVE = "ACTIVE"
@@ -27,8 +29,8 @@ class Competitor(SQLModel, table=True):
         default=TrackingStatus.ACTIVE,
         sa_column=sa.Column(sa.Enum(TrackingStatus, values_callable=lambda x: [e.value for e in x]), nullable=False)
     )
-    score: Optional[float] = Field(default=None)
-    last_scanned_at: Optional[datetime] = Field(default=None, nullable=True)
+    score: float | None = Field(default=None)
+    last_scanned_at: datetime | None = Field(default=None, nullable=True)
 
     project: "Project" = Relationship(back_populates="competitors")
-    events: List["Event"] = Relationship(back_populates="competitor")
+    events: list["Event"] = Relationship(back_populates="competitor")

@@ -1,31 +1,37 @@
-import uuid
-from typing import List, Any, Annotated, Optional
 import random
+import uuid
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlmodel import Session, select, func
 from celery.result import AsyncResult
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlmodel import Session, func, select
 
 from app.api.deps import get_current_user, get_session
-from app.models.user import User
 from app.models.competitor import Competitor
-from app.models.project import Project
-from app.schemas.competitor import CompetitorCreate, CompetitorRead, CompetitorUpdate, RadarResult, CompetitorDetail
-from app.services.quota import QuotaService
 from app.models.event import Event
+from app.models.project import Project
+from app.models.user import User
+from app.schemas.competitor import (
+    CompetitorCreate,
+    CompetitorDetail,
+    CompetitorRead,
+    CompetitorUpdate,
+    RadarResult,
+)
+from app.services.quota import QuotaService
 from app.tasks.radar import perform_market_scan
 from app.tasks.scraping import scrape_competitor_task
 
 router = APIRouter()
 
-@router.get("/", response_model=List[CompetitorRead])
+@router.get("/", response_model=list[CompetitorRead])
 def read_competitors(
     *,
     session: Annotated[Session, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
     skip: int = 0,
     limit: int = 100,
-    project_id: uuid.UUID = None
+    project_id: uuid.UUID | None = None
 ) -> Any:
     """
     Retrieve competitors.
@@ -90,7 +96,7 @@ def radar_scan(
     }
 
 
-@router.get("/radar", response_model=List[RadarResult])
+@router.get("/radar", response_model=list[RadarResult])
 def radar_scan_sync(
     *,
     current_user: Annotated[User, Depends(get_current_user)],
@@ -253,7 +259,7 @@ def refresh_competitor(
     session: Annotated[Session, Depends(get_session)],
     current_user: Annotated[User, Depends(get_current_user)],
     competitor_id: uuid.UUID,
-    location: Optional[str] = None,
+    location: str | None = None,
 ) -> Any:
     """
     Manually trigger a refresh for a specific competitor.
@@ -316,7 +322,7 @@ def refresh_competitor(
         "message": "Refresh task started. Use /tasks/" + task.id + " to check status."
     }
 
-@router.get("/{competitor_id}/events", response_model=List[Event])
+@router.get("/{competitor_id}/events", response_model=list[Event])
 def read_competitor_events(
     *,
     session: Annotated[Session, Depends(get_session)],

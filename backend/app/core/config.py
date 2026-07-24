@@ -1,8 +1,8 @@
-from typing import List, Union, Optional
-from pathlib import Path
-from pydantic import AnyHttpUrl, field_validator, ValidationInfo
-from pydantic_settings import BaseSettings
 import warnings
+from pathlib import Path
+
+from pydantic import AnyHttpUrl, ValidationInfo, field_validator
+from pydantic_settings import BaseSettings
 
 # Get the backend directory path and locate .env in parent (root) directory
 # config.py is at: backend/app/core/config.py
@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Vigilux"
     API_V1_STR: str = "/api/v1"
     ENVIRONMENT: str = "development"
-    BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
+    BACKEND_CORS_ORIGINS: list[AnyHttpUrl] = []
 
     DEBUG: bool = True
 
@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: str = "vigilux_user"
     POSTGRES_PASSWORD: str = "vigilux_password"
     POSTGRES_DB: str = "vigilux"
-    DATABASE_URL: Optional[str] = None
+    DATABASE_URL: str | None = None
 
     # Security Configuration
     # IMPORTANT: SECRET_KEY must be set in .env file!
@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     REDIS_HOST: str = "redis"
     REDIS_PORT: int = 6379
     REDIS_DB: int = 0
-    REDIS_URL: Optional[str] = None
+    REDIS_URL: str | None = None
 
     # Apify Configuration (Web Scraping)
     APIFY_API_TOKEN: str = ""
@@ -86,7 +86,7 @@ class Settings(BaseSettings):
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
-    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
+    def assemble_cors_origins(cls, v: str | list[str]) -> list[str] | str:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
         elif isinstance(v, (list, str)):
@@ -95,7 +95,7 @@ class Settings(BaseSettings):
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
-    def assemble_db_connection(cls, v: Optional[str], info: ValidationInfo) -> str:
+    def assemble_db_connection(cls, v: str | None, info: ValidationInfo) -> str:
         if isinstance(v, str):
             return v
         # Get values from info for Pydantic v2
@@ -105,7 +105,7 @@ class Settings(BaseSettings):
 
     @field_validator("REDIS_URL", mode="before")
     @classmethod
-    def assemble_redis_connection(cls, v: Optional[str], info: ValidationInfo) -> str:
+    def assemble_redis_connection(cls, v: str | None, info: ValidationInfo) -> str:
         if isinstance(v, str):
             return v
         # Get values from info for Pydantic v2

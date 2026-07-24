@@ -1,13 +1,15 @@
-from typing import List, Any, Annotated
+from typing import Annotated, Any
+
 from fastapi import APIRouter, Depends
 from sqlmodel import Session, select
+
 from app.api.deps import get_current_user, get_session
-from app.models.user import User
 from app.models.project import Project
+from app.models.user import User
 
 router = APIRouter()
 
-@router.get("/", response_model=List[Project])
+@router.get("/", response_model=list[Project])
 def read_projects(
     *,
     session: Annotated[Session, Depends(get_session)],

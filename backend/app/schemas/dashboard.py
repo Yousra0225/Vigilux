@@ -1,6 +1,7 @@
-from typing import List
-from pydantic import BaseModel
 from datetime import date
+
+from pydantic import BaseModel
+
 
 class EventCount(BaseModel):
     date: date
@@ -10,4 +11,4 @@ class DashboardStats(BaseModel):
     total_competitors: int
     breakthroughs_today: int
     avg_threat_score: float
-    chart_data: List[EventCount]
+    chart_data: list[EventCount]

@@ -1,7 +1,10 @@
 import uuid
+
 from fastapi.testclient import TestClient
 from sqlmodel import Session
+
 from app.models.project import Project
+
 
 def get_auth_header(client: TestClient, email: str):
     client.post("/api/v1/auth/register", json={"email": email, "password": "password"})

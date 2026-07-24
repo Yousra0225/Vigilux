@@ -1,7 +1,6 @@
-from datetime import datetime, timedelta
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
-from app.models.user import User, PlanType
+from app.models.user import PlanType, User
 
 PLAN_LIMITS = {
     PlanType.STARTER: 3,
@@ -21,7 +20,7 @@ class QuotaService:
         """
         if user.plan_type == PlanType.GROWTH and user.trial_start_date:
             expiration_date = user.trial_start_date + timedelta(days=TRIAL_DURATION_DAYS)
-            if datetime.utcnow() > expiration_date:
+            if datetime.now(UTC) > expiration_date:
                 # Trial expired, effectively Starter
                 return PlanType.STARTER
 
@@ -38,7 +37,7 @@ class QuotaService:
         return current_count < limit
 
     @staticmethod
-    def can_refresh_competitor(user: User, last_refresh: Optional[datetime] = None) -> bool:
+    def can_refresh_competitor(user: User, last_refresh: datetime | None = None) -> bool:
         """
         Check if user can refresh a competitor based on their plan.
 
@@ -58,7 +57,7 @@ class QuotaService:
         # Ultimate users: no daily limit, just basic throttle (1 per minute)
         if effective_plan == PlanType.ULTIMATE:
             if last_refresh:
-                time_since_last = datetime.utcnow() - last_refresh
+                time_since_last = datetime.now(UTC) - last_refresh
                 # Allow refresh if at least 1 minute has passed
                 return time_since_last >= timedelta(minutes=1)
             return True
@@ -66,7 +65,7 @@ class QuotaService:
         # Growth users: 10 per 24 hours
         if effective_plan == PlanType.GROWTH:
             if last_refresh:
-                time_since_last = datetime.utcnow() - last_refresh
+                time_since_last = datetime.now(UTC) - last_refresh
                 # Allow refresh if at least 2.4 hours has passed (24h / 10)
                 return time_since_last >= timedelta(hours=2.4)
             return True
@@ -74,7 +73,7 @@ class QuotaService:
         # Starter users: 1 per 24 hours
         if effective_plan == PlanType.STARTER:
             if last_refresh:
-                time_since_last = datetime.utcnow() - last_refresh
+                time_since_last = datetime.now(UTC) - last_refresh
                 # Allow refresh if at least 24 hours have passed
                 return time_since_last >= timedelta(hours=24)
             return True

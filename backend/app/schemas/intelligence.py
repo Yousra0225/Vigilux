@@ -5,9 +5,9 @@ Defines the structure for parsed AI responses from Gemini,
 including SWOT analysis, threat scoring, and key events.
 """
 
-from typing import List, Optional
-from pydantic import BaseModel, Field, field_validator
 from enum import Enum
+
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 
 class MarketSentiment(str, Enum):
@@ -29,10 +29,10 @@ class SWOTAnalysis(BaseModel):
     """
     Strengths, Weaknesses, Opportunities, and Threats analysis.
     """
-    strengths: List[str] = Field(default_factory=list, description="Key strengths of the competitor")
-    weaknesses: List[str] = Field(default_factory=list, description="Key weaknesses of the competitor")
-    opportunities: List[str] = Field(default_factory=list, description="Opportunities for the competitor")
-    threats: List[str] = Field(default_factory=list, description="Threats posed by the competitor")
+    strengths: list[str] = Field(default_factory=list, description="Key strengths of the competitor")
+    weaknesses: list[str] = Field(default_factory=list, description="Key weaknesses of the competitor")
+    opportunities: list[str] = Field(default_factory=list, description="Opportunities for the competitor")
+    threats: list[str] = Field(default_factory=list, description="Threats posed by the competitor")
 
     @field_validator("*", mode="before")
     @classmethod
@@ -84,7 +84,7 @@ class IntelligenceReport(BaseModel):
     sentinel_score: int = Field(default=50, ge=0, le=100, description="Competitive threat score (0-100)")
     market_sentiment: MarketSentiment = Field(default=MarketSentiment.NEUTRAL, description="Overall market sentiment")
     pitch: str = Field(default="", description="Brief 1-2 sentence summary of the competitor")
-    key_events: List[KeyEvent] = Field(default_factory=list, description="Detected competitive events")
+    key_events: list[KeyEvent] = Field(default_factory=list, description="Detected competitive events")
 
     @field_validator("sentinel_score", mode="before")
     @classmethod
@@ -129,7 +129,7 @@ class IntelligenceParseError(BaseModel):
     """
     raw_response: str = Field(description="The raw AI response that failed to parse")
     error_message: str = Field(description="Error description")
-    partial_data: Optional[dict] = Field(default=None, description="Any partial data that could be extracted")
+    partial_data: dict | None = Field(default=None, description="Any partial data that could be extracted")
 
 
 def parse_intelligence_response(ai_response: str) -> IntelligenceReport:
@@ -184,8 +184,10 @@ def parse_intelligence_response(ai_response: str) -> IntelligenceReport:
     # Validate and create the report
     try:
         return IntelligenceReport(**data)
-    except Exception as e:
-        raise ValueError(f"AI response does not match IntelligenceReport schema: {e}") from e
+    except ValidationError as exc:
+        raise ValueError(
+            f"AI response does not match IntelligenceReport schema: {exc}"
+        ) from exc
 
 
 def safe_parse_intelligence_response(ai_response: str) -> tuple[IntelligenceReport | None, IntelligenceParseError | None]:
@@ -204,9 +206,9 @@ def safe_parse_intelligence_response(ai_response: str) -> tuple[IntelligenceRepo
     try:
         report = parse_intelligence_response(ai_response)
         return report, None
-    except Exception as e:
+    except ValueError as exc:
         error = IntelligenceParseError(
-            raw_response=ai_response[:1000],  # Truncate for storage
-            error_message=str(e)
+            raw_response=ai_response[:1000],
+            error_message=str(exc),
         )
         return None, error

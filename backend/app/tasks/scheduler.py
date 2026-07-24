@@ -1,16 +1,18 @@
 import logging
 import uuid
-from datetime import datetime, timedelta
-from typing import Any, Dict
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
+from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import select
 
 from app.core.celery_app import celery_app
 from app.core.db import get_session
 from app.models.competitor import Competitor, TrackingStatus
 from app.models.project import Project
-from app.models.user import User, PlanType
+from app.models.user import PlanType, User
 from app.tasks.base import BaseTask
+
 # Lazy import to avoid circular dependency
 # from app.tasks.scraping import scrape_competitor_task
 
@@ -18,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 @celery_app.task(base=BaseTask, bind=True, name="app.tasks.scheduler.run_tiered_scheduler")
-def run_tiered_scheduler(self) -> Dict[str, Any]:
+def run_tiered_scheduler(self) -> dict[str, Any]:
     """
     Periodic task that triggers competitor scans based on user plan tier.
 
@@ -77,18 +79,24 @@ def run_tiered_scheduler(self) -> Dict[str, Any]:
                         should_scan = True
                         reason = "never scanned"
                     else:
-                        time_since_scan = datetime.utcnow() - competitor.last_scanned_at
+                        time_since_scan = datetime.now(UTC) - competitor.last_scanned_at
 
-                        if effective_plan == PlanType.ULTIMATE:
-                            # Daily: trigger if > 24 hours
-                            if time_since_scan >= timedelta(hours=24):
-                                should_scan = True
-                                reason = f"last scan {time_since_scan.days} days ago (Ultimate: daily)"
-                        elif effective_plan == PlanType.GROWTH:
-                            # Weekly: trigger if > 7 days
-                            if time_since_scan >= timedelta(days=7):
-                                should_scan = True
-                                reason = f"last scan {time_since_scan.days} days ago (Growth: weekly)"
+                        if (
+                            effective_plan == PlanType.ULTIMATE
+                            and time_since_scan >= timedelta(hours=24)
+                        ):
+                            should_scan = True
+                            reason = (
+                                f"last scan {time_since_scan.days} days ago (Ultimate: daily)"
+                            )
+                        elif (
+                            effective_plan == PlanType.GROWTH
+                            and time_since_scan >= timedelta(days=7)
+                        ):
+                            should_scan = True
+                            reason = (
+                                f"last scan {time_since_scan.days} days ago (Growth: weekly)"
+                            )
 
                     if should_scan:
                         logger.info(
@@ -101,20 +109,20 @@ def run_tiered_scheduler(self) -> Dict[str, Any]:
                     else:
                         skipped_count += 1
 
-                except Exception as e:
-                    logger.error(f"Error processing competitor {competitor.id}: {e}")
+                except (SQLAlchemyError, OSError, RuntimeError, TypeError, ValueError) as exc:
+                    logger.error(f"Error processing competitor {competitor.id}: {exc}")
                     errors.append({
                         "competitor_id": str(competitor.id),
-                        "error": str(e)
+                        "error": str(exc),
                     })
 
-    except Exception as e:
-        logger.error(f"Error in tiered scheduler: {e}")
+    except SQLAlchemyError as exc:
+        logger.error(f"Error in tiered scheduler: {exc}")
         return {
             "success": False,
-            "error": str(e),
+            "error": str(exc),
             "triggered": 0,
-            "skipped": 0
+            "skipped": 0,
         }
 
     result = {
@@ -122,7 +130,7 @@ def run_tiered_scheduler(self) -> Dict[str, Any]:
         "triggered": triggered_count,
         "skipped": skipped_count,
         "errors": len(errors),
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.now(UTC).isoformat()
     }
 
     logger.info(
@@ -134,7 +142,7 @@ def run_tiered_scheduler(self) -> Dict[str, Any]:
 
 
 @celery_app.task(base=BaseTask, bind=True, name="app.tasks.scheduler.trigger_project_scan")
-def trigger_project_scan(self, project_id: str) -> Dict[str, Any]:
+def trigger_project_scan(self, project_id: str) -> dict[str, Any]:
     """
     Trigger scans for all competitors in a specific project.
 

@@ -1,11 +1,10 @@
 import logging
 import random
 import uuid
-from typing import List
 
 from app.core.celery_app import celery_app
-from app.tasks.base import ScanningTask
 from app.services.apify import ApifyService
+from app.tasks.base import ScanningTask
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +19,8 @@ def perform_market_scan(
     query: str,
     user_id: str,
     num_results: int = 5,
-    location: str = None
-) -> List[dict]:
+    location: str | None = None
+) -> list[dict]:
     """
     Perform an async market scan for competitors.
 
@@ -84,8 +83,8 @@ def perform_market_scan(
                 logger.info(f"Apify scan completed: found {len(results)} results")
                 return results
 
-        except Exception as e:
-            logger.warning(f"Apify scan failed, falling back to mock data: {e}")
+        except (OSError, RuntimeError, ValueError, TypeError, KeyError) as exc:
+            logger.warning(f"Apify scan failed, falling back to mock data: {exc}")
 
     # Fallback to mock data generation
     logger.info("Using mock data generation for market scan")
@@ -139,7 +138,7 @@ def perform_market_scan(
 def add_competitors_from_scan(
     self,
     project_id: str,
-    scan_results: List[dict],
+    scan_results: list[dict],
     user_id: str
 ) -> dict:
     """

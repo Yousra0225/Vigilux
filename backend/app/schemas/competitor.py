@@ -1,7 +1,9 @@
 import uuid
-from typing import Optional, List
+
 from pydantic import BaseModel
+
 from app.models.competitor import TrackingStatus
+
 
 class CompetitorBase(BaseModel):
     name: str
@@ -9,19 +11,19 @@ class CompetitorBase(BaseModel):
 
 class CompetitorCreate(CompetitorBase):
     project_id: uuid.UUID
-    status: Optional[TrackingStatus] = TrackingStatus.ACTIVE
+    status: TrackingStatus | None = TrackingStatus.ACTIVE
 
 class CompetitorUpdate(BaseModel):
-    name: Optional[str] = None
-    url: Optional[str] = None
-    status: Optional[TrackingStatus] = None
-    score: Optional[float] = None
+    name: str | None = None
+    url: str | None = None
+    status: TrackingStatus | None = None
+    score: float | None = None
 
 class CompetitorRead(CompetitorBase):
     id: uuid.UUID
     project_id: uuid.UUID
     status: TrackingStatus
-    score: Optional[float] = None
+    score: float | None = None
 
     class Config:
         from_attributes = True
@@ -29,8 +31,8 @@ class CompetitorRead(CompetitorBase):
 class CompetitorDetail(CompetitorRead):
     pitch: str
     estimated_revenue: str
-    strengths: List[str]
-    weaknesses: List[str]
+    strengths: list[str]
+    weaknesses: list[str]
     market_sentiment: str
 
 class RadarResult(BaseModel):
@@ -39,5 +41,5 @@ class RadarResult(BaseModel):
     threat_score: int
     market_presence: str  # e.g., "High", "Medium", "Low"
     pitch: str
-    strengths: List[str]
-    weaknesses: List[str]
+    strengths: list[str]
+    weaknesses: list[str]

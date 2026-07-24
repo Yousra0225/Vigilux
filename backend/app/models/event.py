@@ -1,14 +1,16 @@
 import uuid
-from enum import Enum
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING
-from sqlmodel import Field, SQLModel, Relationship
+from enum import Enum
+from typing import TYPE_CHECKING
+
 import uuid6
+from sqlmodel import Field, Relationship, SQLModel
 
 if TYPE_CHECKING:
     from .competitor import Competitor
 
 import sqlalchemy as sa
+
 
 class EventType(str, Enum):
     PRICE = "PRICE"
@@ -26,7 +28,7 @@ class Event(SQLModel, table=True):
         sa_column=sa.Column(sa.Enum(EventType, values_callable=lambda x: [e.value for e in x]), nullable=False)
     )
     description: str = Field(nullable=False)
-    score: Optional[float] = Field(default=None)
+    score: float | None = Field(default=None)
     timestamp: datetime = Field(default_factory=datetime.utcnow, nullable=False)
 
     competitor: "Competitor" = Relationship(back_populates="events")

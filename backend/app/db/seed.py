@@ -1,13 +1,15 @@
 import random
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
+
 from sqlmodel import Session, select
 
 from app.core.db import engine
 from app.core.security import get_password_hash
-from app.models.user import User, PlanType
-from app.models.project import Project
 from app.models.competitor import Competitor, TrackingStatus
 from app.models.event import Event, EventType
+from app.models.project import Project
+from app.models.user import PlanType, User
+
 
 def seed_data():
     """Populate the database with test data."""
@@ -26,7 +28,7 @@ def seed_data():
                 "email": "growth@example.com",
                 "password": "password123",
                 "plan_type": PlanType.GROWTH,
-                "trial_start_date": datetime.utcnow()
+                "trial_start_date": datetime.now(UTC)
             },
             {
                 "email": "ultimate@example.com",
@@ -135,7 +137,7 @@ def seed_data():
                         type=e_type,
                         description=description,
                         score=score_val,
-                        timestamp=datetime.utcnow() - timedelta(days=random.randint(0, 30))
+                        timestamp=datetime.now(UTC) - timedelta(days=random.randint(0, 30))
                     )
                     session.add(event)
         

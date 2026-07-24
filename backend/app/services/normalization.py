@@ -1,10 +1,10 @@
-from typing import Any, Dict, List
 import logging
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 class NormalizationService:
-    def normalize_google_maps_data(self, raw_items: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def normalize_google_maps_data(self, raw_items: list[dict[str, Any]]) -> dict[str, Any]:
         """
         Normalizes the raw output from the Google Maps scraper into a structured format.
         
@@ -69,8 +69,8 @@ class NormalizationService:
             logger.info(f"Successfully normalized data for: {name}")
             return normalized_data
 
-        except Exception as e:
-            logger.error(f"Error normalizing Google Maps data: {str(e)}")
-            return {"matched": False, "error": str(e)}
+        except (TypeError, ValueError, KeyError, AttributeError) as exc:
+            logger.error(f"Error normalizing Google Maps data: {exc!s}")
+            return {"matched": False, "error": str(exc)}
 
 normalization_service = NormalizationService()
