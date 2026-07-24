@@ -130,6 +130,11 @@ PRIVATE.md
 PRIVATE_*.md
 *_PRIVATE.md
 
+# Local AI development tooling (APM, Gemini commands, Claude config)
+.apm/
+.gemini/
+.claude/
+
 # Spyder project settings
 .spyderproject
 .spyproject
